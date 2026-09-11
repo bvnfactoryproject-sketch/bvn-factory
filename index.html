@@ -1,543 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Synthist</title>
+You are working on my existing GitHub Pages project:
 
-<style>
-* {
-  box-sizing: border-box;
-}
+Repository: bvn-factory
+File: index.html
+App: Live Synthist
+Branch: main
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: white;
-  text-align: center;
-}
+IMPORTANT:
+Do NOT create a new project.
+Do NOT remove or replace the existing working synthesizer.
+Do NOT change the GitHub repository structure.
+Modify the existing index.html only.
 
-header {
-  padding: 20px 15px 10px;
-}
+CURRENT STATUS:
+The Live Synthist web app is already running successfully on GitHub Pages.
 
-h1 {
-  margin: 0;
-  font-size: 32px;
-}
+Already working:
+- Live Synthist title
+- Play button
+- Stop button
+- Frequency slider
+- Frequency value display
+- Volume slider
+- Volume value display
+- Waveform selector
+- Touch Keyboard
+- Web Audio sound generation
+- Multiple waveform choices
 
-.subtitle {
-  margin-top: 6px;
-  color: #aaa;
-}
+CURRENT PROBLEM:
+The "Live Waveform" canvas is visible but remains black/blank.
+HTML already contains:
 
-.panel {
-  width: min(700px, 94%);
-  margin: 15px auto;
-  padding: 20px;
-  background: #1d1d1d;
-  border-radius: 18px;
-}
+<canvas id="visualizer"></canvas>
 
-.controls {
-  display: grid;
-  gap: 18px;
-}
+The JavaScript already contains a drawVisualizer() function around the waveform visualizer section, but the canvas is not displaying the live audio waveform.
 
-.control {
-  text-align: left;
-}
+GOAL:
+Fix ONLY the waveform visualizer so that it displays a real-time waveform while the synthesizer is producing sound.
 
-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
+REQUIREMENTS:
 
-input[type="range"] {
-  width: 100%;
-  height: 35px;
-}
+1. Inspect the EXISTING JavaScript carefully before modifying it.
 
-select,
-button {
-  font-size: 17px;
-  padding: 12px 18px;
-  border-radius: 10px;
-  border: 1px solid #555;
-}
+2. Preserve the existing:
+   - AudioContext
+   - oscillator
+   - gain node
+   - Play/Stop functions
+   - frequency control
+   - volume control
+   - waveform selection
+   - touch keyboard
+   - keyboard controls
+   - existing UI design
 
-select {
-  width: 100%;
-  background: #222;
-  color: white;
-}
+3. Correctly connect the audio signal to an AnalyserNode.
 
-button {
-  cursor: pointer;
-  background: #eee;
-  color: #111;
-  margin: 5px;
-}
+The intended audio chain should be logically equivalent to:
 
-#play {
-  background: #35c759;
-  color: white;
-  border: none;
-}
+Oscillator → Gain → Analyser → AudioContext.destination
 
-#stop {
-  background: #ff453a;
-  color: white;
-  border: none;
-}
+4. Create/use the existing analyser if one already exists.
+Do NOT create a new analyser on every animation frame.
 
-canvas {
-  width: 100%;
-  height: 180px;
-  background: #050505;
-  border-radius: 12px;
-  display: block;
-}
+5. Configure the analyser with suitable values such as:
+   analyser.fftSize = 2048;
 
-.keyboard {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 15px;
-  overflow-x: auto;
-  padding-bottom: 5px;
-}
-
-.key {
-  min-width: 48px;
-  height: 150px;
-  background: white;
-  color: black;
-  border-radius: 0 0 8px 8px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 12px;
-  font-weight: bold;
-  user-select: none;
-  touch-action: none;
-}
-
-.key.active {
-  transform: translateY(5px);
-  background: #aaa;
-}
-
-.status {
-  margin-top: 15px;
-  color: #aaa;
-  min-height: 24px;
-}
-
-footer {
-  color: #777;
-  padding: 20px;
-  font-size: 13px;
-}
-</style>
-</head>
-
-<body>
-
-<header>
-  <h1>🎛️ Live Synthist</h1>
-  <div class="subtitle">Real-time Web Audio Synthesizer</div>
-</header>
-
-<div class="panel">
-
-  <div>
-    <button id="play">▶ Play</button>
-    <button id="stop">■ Stop</button>
-  </div>
-
-  <div class="controls">
-
-    <div class="control">
-      <label>
-        <span>Frequency</span>
-        <span id="freqValue">440 Hz</span>
-      </label>
-      <input
-        id="frequency"
-        type="range"
-        min="50"
-        max="1200"
-        value="440"
-      >
-    </div>
-
-    <div class="control">
-      <label>
-        <span>Volume</span>
-        <span id="volumeValue">30%</span>
-      </label>
-      <input
-        id="volume"
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.30"
-      >
-    </div>
-
-    <div class="control">
-      <label>
-        <span>Waveform</span>
-      </label>
-
-      <select id="waveform">
-        <option value="sine">Sine</option>
-        <option value="square">Square</option>
-        <option value="sawtooth">Sawtooth</option>
-        <option value="triangle">Triangle</option>
-      </select>
-    </div>
-
-  </div>
-</div>
-
-<div class="panel">
-  <h2>📊 Live Waveform</h2>
-  <canvas id="visualizer"></canvas>
-</div>
-
-<div class="panel">
-  <h2>🎹 Touch Keyboard</h2>
-
-  <div class="keyboard">
-
-    <div class="key" data-note="261.63">C</div>
-    <div class="key" data-note="293.66">D</div>
-    <div class="key" data-note="329.63">E</div>
-    <div class="key" data-note="349.23">F</div>
-    <div class="key" data-note="392.00">G</div>
-    <div class="key" data-note="440.00">A</div>
-    <div class="key" data-note="493.88">B</div>
-    <div class="key" data-note="523.25">C</div>
-
-  </div>
-</div>
-
-<div class="panel">
-  <div class="status" id="status">
-    Ready — press Play or touch a key.
-  </div>
-</div>
-
-<footer>
-  BVN Factory • Live Synthist
-</footer>
-
-<script>
-let audioContext = null;
-let oscillator = null;
-let gainNode = null;
-let analyser = null;
-
-const playButton = document.getElementById("play");
-const stopButton = document.getElementById("stop");
-
-const frequency = document.getElementById("frequency");
-const volume = document.getElementById("volume");
-const waveform = document.getElementById("waveform");
-
-const freqValue = document.getElementById("freqValue");
-const volumeValue = document.getElementById("volumeValue");
-const status = document.getElementById("status");
+6. Get the canvas and 2D context safely:
 
 const canvas = document.getElementById("visualizer");
 const canvasContext = canvas.getContext("2d");
 
-let playing = false;
+7. Make the canvas responsive to its displayed size and device pixel ratio so the waveform looks sharp on mobile.
 
-function createAudio() {
+8. Implement a reliable requestAnimationFrame drawing loop.
 
-  if (!audioContext) {
-    audioContext = new (
-      window.AudioContext ||
-      window.webkitAudioContext
-    )();
+9. Use:
 
-    gainNode = audioContext.createGain();
+analyser.getByteTimeDomainData(dataArray);
 
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
+to obtain the live waveform.
 
-    gainNode.connect(analyser);
-    analyser.connect(audioContext.destination);
-  }
+10. Draw the waveform across the canvas using the time-domain data.
 
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
-  }
-}
+11. When audio is NOT playing:
+    - The visualizer should remain clean.
+    - It must not throw errors.
+    - It may show a subtle center line or idle state.
 
-function startSynth(freq = Number(frequency.value)) {
+12. When Play is pressed:
+    - The waveform must visibly move in real time.
+    - The waveform should respond to the selected frequency.
+    - The waveform should respond to the selected waveform type.
+    - The waveform should respond to volume/audio activity.
 
-  createAudio();
+13. When Stop is pressed:
+    - Audio must stop as before.
+    - The visualizer should stop showing active waveform movement.
 
-  if (oscillator) {
-    try {
-      oscillator.stop();
-    } catch (e) {}
-  }
+14. Make sure the analyser connection is established correctly and only once where appropriate.
 
-  oscillator = audioContext.createOscillator();
+15. Avoid duplicate event listeners.
+16. Avoid duplicate animation loops.
+17. Avoid creating multiple AudioContexts unnecessarily.
+18. Do not break mobile touch interaction.
 
-  oscillator.type = waveform.value;
-  oscillator.frequency.setValueAtTime(
-    freq,
-    audioContext.currentTime
-  );
+19. Keep the existing dark UI and existing Live Synthist design.
 
-  gainNode.gain.setValueAtTime(
-    Number(volume.value),
-    audioContext.currentTime
-  );
+20. Do not add external libraries.
+21. Do not use React, npm, build tools, or frameworks.
+22. Keep this as a standalone GitHub Pages index.html.
 
-  oscillator.connect(gainNode);
-  oscillator.start();
+23. Check the complete HTML structure for syntax errors before finishing.
 
-  playing = true;
+24. Check that:
+    - canvas exists before accessing getContext
+    - analyser exists before calling analyser methods
+    - dataArray is initialized correctly
+    - canvasContext exists before drawing
+    - requestAnimationFrame does not create uncontrolled duplicate loops
 
-  status.textContent =
-    "Playing • " + Math.round(freq) + " Hz";
-}
+25. If the existing drawVisualizer() function is faulty, replace/fix that function rather than adding a second competing visualizer system.
 
-function stopSynth() {
+26. If the existing audio setup needs a small modification to connect the analyser, make only the minimum necessary change.
 
-  if (oscillator) {
+27. Do NOT remove the Touch Keyboard.
 
-    try {
-      oscillator.stop();
-    } catch (e) {}
+28. Do NOT remove any currently working controls.
 
-    oscillator.disconnect();
-    oscillator = null;
-  }
+29. Do NOT change the app name.
 
-  playing = false;
+30. After making the changes, make sure the final index.html is a complete valid HTML document.
 
-  status.textContent = "Stopped";
-}
+EXPECTED RESULT:
+When I open the GitHub Pages Live Synthist app:
 
-playButton.addEventListener("click", () => {
-  startSynth();
-});
+- Play produces sound.
+- The Live Waveform canvas displays a clearly visible moving waveform.
+- Frequency changes affect the waveform/audio.
+- Waveform selection works.
+- Volume changes work.
+- Stop stops the audio and active visualization.
+- Touch Keyboard continues to work.
+- Everything works on Android mobile Chrome.
 
-stopButton.addEventListener("click", () => {
-  stopSynth();
-});
+IMPORTANT OUTPUT:
+After fixing the code, show me the COMPLETE FINAL index.html code.
 
-frequency.addEventListener("input", () => {
+Do not give me only a partial snippet.
+Do not omit existing working sections.
+Do not invent a new unrelated app.
 
-  const value = Number(frequency.value);
-
-  freqValue.textContent =
-    Math.round(value) + " Hz";
-
-  if (oscillator && playing) {
-    oscillator.frequency.setValueAtTime(
-      value,
-      audioContext.currentTime
-    );
-  }
-});
-
-volume.addEventListener("input", () => {
-
-  const value = Number(volume.value);
-
-  volumeValue.textContent =
-    Math.round(value * 100) + "%";
-
-  if (gainNode && audioContext) {
-    gainNode.gain.setValueAtTime(
-      value,
-      audioContext.currentTime
-    );
-  }
-});
-
-waveform.addEventListener("change", () => {
-
-  if (oscillator) {
-    oscillator.type = waveform.value;
-  }
-});
-
-
-// Touch keyboard
-
-document.querySelectorAll(".key").forEach(key => {
-
-  const playKey = (event) => {
-
-    event.preventDefault();
-
-    key.classList.add("active");
-
-    const note =
-      Number(key.dataset.note);
-
-    frequency.value = note;
-
-    freqValue.textContent =
-      note.toFixed(2) + " Hz";
-
-    startSynth(note);
-  };
-
-  const releaseKey = (event) => {
-
-    event.preventDefault();
-
-    key.classList.remove("active");
-
-    stopSynth();
-  };
-
-  key.addEventListener(
-    "pointerdown",
-    playKey
-  );
-
-  key.addEventListener(
-    "pointerup",
-    releaseKey
-  );
-
-  key.addEventListener(
-    "pointercancel",
-    releaseKey
-  );
-
-  key.addEventListener(
-    "pointerleave",
-    releaseKey
-  );
-});
-
-
-// Waveform visualizer
-
-function drawVisualizer() {
-
-  requestAnimationFrame(drawVisualizer);
-
-  if (!analyser) {
-
-    canvasContext.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    return;
-  }
-
-  const bufferLength =
-    analyser.fftSize;
-
-  const dataArray =
-    new Uint8Array(bufferLength);
-
-  analyser.getByteTimeDomainData(
-    dataArray
-  );
-
-  canvasContext.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  canvasContext.beginPath();
-
-  const sliceWidth =
-    canvas.width / bufferLength;
-
-  let x = 0;
-
-  for (
-    let i = 0;
-    i < bufferLength;
-    i++
-  ) {
-
-    const value =
-      dataArray[i] / 128.0;
-
-    const y =
-      value * canvas.height / 2;
-
-    if (i === 0) {
-      canvasContext.moveTo(x, y);
-    } else {
-      canvasContext.lineTo(x, y);
-    }
-
-    x += sliceWidth;
-  }
-
-  canvasContext.lineTo(
-    canvas.width,
-    canvas.height / 2
-  );
-
-  canvasContext.stroke();
-
-}
-
-drawVisualizer();
-
-
-// Keyboard shortcuts
-
-const keyboardNotes = {
-  "a": 261.63,
-  "s": 293.66,
-  "d": 329.63,
-  "f": 349.23,
-  "g": 392.00,
-  "h": 440.00,
-  "j": 493.88,
-  "k": 523.25
-};
-
-document.addEventListener("keydown", event => {
-
-  if (event.repeat) return;
-
-  const note =
-    keyboardNotes[event.key.toLowerCase()];
-
-  if (note) {
-    startSynth(note);
-  }
-
-});
-
-document.addEventListener("keyup", event => {
-
-  if (keyboardNotes[event.key.toLowerCase()]) {
-    stopSynth();
-  }
-
-});
-</script>
-
-</body>
-</html>
+The final result must be directly usable as the repository's index.html.
