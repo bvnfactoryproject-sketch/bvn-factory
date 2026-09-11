@@ -1,154 +1,908 @@
-You are working on my existing GitHub Pages project:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Synthist</title>
 
-Repository: bvn-factory
-File: index.html
-App: Live Synthist
-Branch: main
+<style>
+* {
+  box-sizing: border-box;
+}
 
-IMPORTANT:
-Do NOT create a new project.
-Do NOT remove or replace the existing working synthesizer.
-Do NOT change the GitHub repository structure.
-Modify the existing index.html only.
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
+}
 
-CURRENT STATUS:
-The Live Synthist web app is already running successfully on GitHub Pages.
+header {
+  padding: 20px 15px 10px;
+}
 
-Already working:
-- Live Synthist title
-- Play button
-- Stop button
-- Frequency slider
-- Frequency value display
-- Volume slider
-- Volume value display
-- Waveform selector
-- Touch Keyboard
-- Web Audio sound generation
-- Multiple waveform choices
+h1 {
+  margin: 0;
+  font-size: 32px;
+}
 
-CURRENT PROBLEM:
-The "Live Waveform" canvas is visible but remains black/blank.
-HTML already contains:
+.subtitle {
+  margin-top: 6px;
+  color: #aaa;
+}
 
-<canvas id="visualizer"></canvas>
+.panel {
+  width: min(700px, 94%);
+  margin: 15px auto;
+  padding: 20px;
+  background: #1d1d1d;
+  border-radius: 18px;
+}
 
-The JavaScript already contains a drawVisualizer() function around the waveform visualizer section, but the canvas is not displaying the live audio waveform.
+.controls {
+  display: grid;
+  gap: 18px;
+}
 
-GOAL:
-Fix ONLY the waveform visualizer so that it displays a real-time waveform while the synthesizer is producing sound.
+.control {
+  text-align: left;
+}
 
-REQUIREMENTS:
+label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
 
-1. Inspect the EXISTING JavaScript carefully before modifying it.
+input[type="range"] {
+  width: 100%;
+  height: 35px;
+}
 
-2. Preserve the existing:
-   - AudioContext
-   - oscillator
-   - gain node
-   - Play/Stop functions
-   - frequency control
-   - volume control
-   - waveform selection
-   - touch keyboard
-   - keyboard controls
-   - existing UI design
+select,
+button {
+  font-size: 17px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid #555;
+}
 
-3. Correctly connect the audio signal to an AnalyserNode.
+select {
+  width: 100%;
+  background: #222;
+  color: white;
+}
 
-The intended audio chain should be logically equivalent to:
+button {
+  cursor: pointer;
+  background: #eee;
+  color: #111;
+  margin: 5px;
+}
 
-Oscillator → Gain → Analyser → AudioContext.destination
+#play {
+  background: #35c759;
+  color: white;
+  border: none;
+}
 
-4. Create/use the existing analyser if one already exists.
-Do NOT create a new analyser on every animation frame.
+#stop {
+  background: #ff453a;
+  color: white;
+  border: none;
+}
 
-5. Configure the analyser with suitable values such as:
-   analyser.fftSize = 2048;
+canvas {
+  width: 100%;
+  height: 180px;
+  background: #050505;
+  border-radius: 12px;
+  display: block;
+}
 
-6. Get the canvas and 2D context safely:
+.keyboard {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 15px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.key {
+  min-width: 48px;
+  height: 150px;
+  background: white;
+  color: black;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 12px;
+  font-weight: bold;
+  user-select: none;
+  touch-action: none;
+}
+
+.key.active {
+  transform: translateY(5px);
+  background: #aaa;
+}
+
+.status {
+  margin-top: 15px;
+  color: #aaa;
+  min-height: 24px;
+}
+
+footer {
+  color: #777;
+  padding: 20px;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🎛️ Live Synthist</h1>
+  <div class="subtitle">Real-time Web Audio Synthesizer</div>
+</header>
+
+<div class="panel">
+
+  <div>
+    <button id="play">▶ Play</button>
+    <button id="stop">■ Stop</button>
+  </div>
+
+  <div class="controls">
+
+    <div class="control">
+      <label>
+        <span>Frequency</span>
+        <span id="freqValue">440 Hz</span>
+      </label>
+
+      <input
+        id="frequency"
+        type="range"
+        min="50"
+        max="1200"
+        value="440"
+      >
+    </div>
+
+    <div class="control">
+      <label>
+        <span>Volume</span>
+        <span id="volumeValue">30%</span>
+      </label>
+
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.30"
+      >
+    </div>
+
+    <div class="control">
+      <label>
+        <span>Waveform</span>
+      </label>
+
+      <select id="waveform">
+        <option value="sine">Sine</option>
+        <option value="square">Square</option>
+        <option value="sawtooth">Sawtooth</option>
+        <option value="triangle">Triangle</option>
+      </select>
+    </div>
+
+  </div>
+</div>
+
+<div class="panel">
+  <h2>📊 Live Waveform</h2>
+  <canvas id="visualizer"></canvas>
+</div>
+
+<div class="panel">
+  <h2>🎹 Touch Keyboard</h2>
+
+  <div class="keyboard">
+
+    <div class="key" data-note="261.63">C</div>
+    <div class="key" data-note="293.66">D</div>
+    <div class="key" data-note="329.63">E</div>
+    <div class="key" data-note="349.23">F</div>
+    <div class="key" data-note="392.00">G</div>
+    <div class="key" data-note="440.00">A</div>
+    <div class="key" data-note="493.88">B</div>
+    <div class="key" data-note="523.25">C</div>
+
+  </div>
+</div>
+
+<div class="panel">
+  <div class="status" id="status">
+    Ready — press Play or touch a key.
+  </div>
+</div>
+
+<footer>
+  BVN Factory • Live Synthist
+</footer>
+
+<script>
+let audioContext = null;
+let oscillator = null;
+let gainNode = null;
+let analyser = null;
+
+let playing = false;
+
+let dataArray = null;
+let animationFrameId = null;
+
+const playButton = document.getElementById("play");
+const stopButton = document.getElementById("stop");
+
+const frequency = document.getElementById("frequency");
+const volume = document.getElementById("volume");
+const waveform = document.getElementById("waveform");
+
+const freqValue = document.getElementById("freqValue");
+const volumeValue = document.getElementById("volumeValue");
+const status = document.getElementById("status");
 
 const canvas = document.getElementById("visualizer");
-const canvasContext = canvas.getContext("2d");
 
-7. Make the canvas responsive to its displayed size and device pixel ratio so the waveform looks sharp on mobile.
+let canvasContext = null;
 
-8. Implement a reliable requestAnimationFrame drawing loop.
+if (canvas) {
+  canvasContext = canvas.getContext("2d");
+}
 
-9. Use:
 
-analyser.getByteTimeDomainData(dataArray);
+/* -------------------------------------------------------
+   CANVAS RESIZE
+------------------------------------------------------- */
 
-to obtain the live waveform.
+function resizeCanvas() {
 
-10. Draw the waveform across the canvas using the time-domain data.
+  if (!canvas || !canvasContext) {
+    return;
+  }
 
-11. When audio is NOT playing:
-    - The visualizer should remain clean.
-    - It must not throw errors.
-    - It may show a subtle center line or idle state.
+  const rect = canvas.getBoundingClientRect();
 
-12. When Play is pressed:
-    - The waveform must visibly move in real time.
-    - The waveform should respond to the selected frequency.
-    - The waveform should respond to the selected waveform type.
-    - The waveform should respond to volume/audio activity.
+  const width = Math.max(1, Math.floor(rect.width));
+  const height = Math.max(1, Math.floor(rect.height));
 
-13. When Stop is pressed:
-    - Audio must stop as before.
-    - The visualizer should stop showing active waveform movement.
+  const dpr = Math.max(
+    1,
+    Math.min(window.devicePixelRatio || 1, 3)
+  );
 
-14. Make sure the analyser connection is established correctly and only once where appropriate.
+  const pixelWidth = Math.floor(width * dpr);
+  const pixelHeight = Math.floor(height * dpr);
 
-15. Avoid duplicate event listeners.
-16. Avoid duplicate animation loops.
-17. Avoid creating multiple AudioContexts unnecessarily.
-18. Do not break mobile touch interaction.
+  if (
+    canvas.width !== pixelWidth ||
+    canvas.height !== pixelHeight
+  ) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
 
-19. Keep the existing dark UI and existing Live Synthist design.
+  canvasContext.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+}
 
-20. Do not add external libraries.
-21. Do not use React, npm, build tools, or frameworks.
-22. Keep this as a standalone GitHub Pages index.html.
 
-23. Check the complete HTML structure for syntax errors before finishing.
+/* -------------------------------------------------------
+   IDLE VISUALIZER
+------------------------------------------------------- */
 
-24. Check that:
-    - canvas exists before accessing getContext
-    - analyser exists before calling analyser methods
-    - dataArray is initialized correctly
-    - canvasContext exists before drawing
-    - requestAnimationFrame does not create uncontrolled duplicate loops
+function drawIdleVisualizer() {
 
-25. If the existing drawVisualizer() function is faulty, replace/fix that function rather than adding a second competing visualizer system.
+  if (!canvas || !canvasContext) {
+    return;
+  }
 
-26. If the existing audio setup needs a small modification to connect the analyser, make only the minimum necessary change.
+  resizeCanvas();
 
-27. Do NOT remove the Touch Keyboard.
+  const rect = canvas.getBoundingClientRect();
 
-28. Do NOT remove any currently working controls.
+  const width = rect.width;
+  const height = rect.height;
 
-29. Do NOT change the app name.
+  canvasContext.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
 
-30. After making the changes, make sure the final index.html is a complete valid HTML document.
+  canvasContext.strokeStyle = "#333";
+  canvasContext.lineWidth = 1;
 
-EXPECTED RESULT:
-When I open the GitHub Pages Live Synthist app:
+  canvasContext.beginPath();
 
-- Play produces sound.
-- The Live Waveform canvas displays a clearly visible moving waveform.
-- Frequency changes affect the waveform/audio.
-- Waveform selection works.
-- Volume changes work.
-- Stop stops the audio and active visualization.
-- Touch Keyboard continues to work.
-- Everything works on Android mobile Chrome.
+  canvasContext.moveTo(
+    0,
+    height / 2
+  );
 
-IMPORTANT OUTPUT:
-After fixing the code, show me the COMPLETE FINAL index.html code.
+  canvasContext.lineTo(
+    width,
+    height / 2
+  );
 
-Do not give me only a partial snippet.
-Do not omit existing working sections.
-Do not invent a new unrelated app.
+  canvasContext.stroke();
+}
 
-The final result must be directly usable as the repository's index.html.
+
+/* -------------------------------------------------------
+   AUDIO SETUP
+------------------------------------------------------- */
+
+function createAudio() {
+
+  if (!audioContext) {
+
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      status.textContent =
+        "Web Audio is not supported on this browser.";
+      return false;
+    }
+
+    audioContext = new AudioContextClass();
+
+    gainNode = audioContext.createGain();
+
+    analyser = audioContext.createAnalyser();
+
+    analyser.fftSize = 2048;
+
+    analyser.minDecibels = -90;
+    analyser.maxDecibels = -10;
+    analyser.smoothingTimeConstant = 0.05;
+
+    /*
+      Audio chain:
+
+      Oscillator
+          ↓
+      Gain
+          ↓
+      Analyser
+          ↓
+      AudioContext.destination
+    */
+
+    gainNode.connect(analyser);
+
+    analyser.connect(
+      audioContext.destination
+    );
+
+    dataArray = new Uint8Array(
+      analyser.fftSize
+    );
+  }
+
+  if (
+    audioContext &&
+    audioContext.state === "suspended"
+  ) {
+    audioContext.resume();
+  }
+
+  return true;
+}
+
+
+/* -------------------------------------------------------
+   START SYNTH
+------------------------------------------------------- */
+
+function startSynth(
+  freq = Number(frequency.value)
+) {
+
+  if (!createAudio()) {
+    return;
+  }
+
+  /*
+    Stop previous oscillator before creating
+    a new one.
+  */
+
+  if (oscillator) {
+
+    try {
+      oscillator.stop();
+    } catch (e) {}
+
+    try {
+      oscillator.disconnect();
+    } catch (e) {}
+
+    oscillator = null;
+  }
+
+  oscillator =
+    audioContext.createOscillator();
+
+  oscillator.type =
+    waveform.value;
+
+  oscillator.frequency.setValueAtTime(
+    freq,
+    audioContext.currentTime
+  );
+
+  gainNode.gain.setValueAtTime(
+    Number(volume.value),
+    audioContext.currentTime
+  );
+
+  oscillator.connect(
+    gainNode
+  );
+
+  oscillator.start();
+
+  playing = true;
+
+  status.textContent =
+    "Playing • " +
+    Math.round(freq) +
+    " Hz";
+
+  startVisualizer();
+}
+
+
+/* -------------------------------------------------------
+   STOP SYNTH
+------------------------------------------------------- */
+
+function stopSynth() {
+
+  if (oscillator) {
+
+    try {
+      oscillator.stop();
+    } catch (e) {}
+
+    try {
+      oscillator.disconnect();
+    } catch (e) {}
+
+    oscillator = null;
+  }
+
+  playing = false;
+
+  status.textContent = "Stopped";
+
+  stopVisualizer();
+
+  drawIdleVisualizer();
+}
+
+
+/* -------------------------------------------------------
+   PLAY / STOP BUTTONS
+------------------------------------------------------- */
+
+playButton.addEventListener(
+  "click",
+  () => {
+    startSynth();
+  }
+);
+
+stopButton.addEventListener(
+  "click",
+  () => {
+    stopSynth();
+  }
+);
+
+
+/* -------------------------------------------------------
+   FREQUENCY CONTROL
+------------------------------------------------------- */
+
+frequency.addEventListener(
+  "input",
+  () => {
+
+    const value =
+      Number(frequency.value);
+
+    freqValue.textContent =
+      Math.round(value) +
+      " Hz";
+
+    if (
+      oscillator &&
+      playing &&
+      audioContext
+    ) {
+
+      oscillator.frequency.setValueAtTime(
+        value,
+        audioContext.currentTime
+      );
+
+      status.textContent =
+        "Playing • " +
+        Math.round(value) +
+        " Hz";
+    }
+  }
+);
+
+
+/* -------------------------------------------------------
+   VOLUME CONTROL
+------------------------------------------------------- */
+
+volume.addEventListener(
+  "input",
+  () => {
+
+    const value =
+      Number(volume.value);
+
+    volumeValue.textContent =
+      Math.round(value * 100) +
+      "%";
+
+    if (
+      gainNode &&
+      audioContext
+    ) {
+
+      gainNode.gain.setValueAtTime(
+        value,
+        audioContext.currentTime
+      );
+    }
+  }
+);
+
+
+/* -------------------------------------------------------
+   WAVEFORM CONTROL
+------------------------------------------------------- */
+
+waveform.addEventListener(
+  "change",
+  () => {
+
+    if (oscillator) {
+      oscillator.type =
+        waveform.value;
+    }
+  }
+);
+
+
+/* -------------------------------------------------------
+   TOUCH KEYBOARD
+------------------------------------------------------- */
+
+document
+  .querySelectorAll(".key")
+  .forEach(key => {
+
+    const playKey = event => {
+
+      event.preventDefault();
+
+      key.classList.add("active");
+
+      const note =
+        Number(key.dataset.note);
+
+      frequency.value = note;
+
+      freqValue.textContent =
+        note.toFixed(2) +
+        " Hz";
+
+      startSynth(note);
+    };
+
+
+    const releaseKey = event => {
+
+      event.preventDefault();
+
+      key.classList.remove(
+        "active"
+      );
+
+      stopSynth();
+    };
+
+
+    key.addEventListener(
+      "pointerdown",
+      playKey
+    );
+
+    key.addEventListener(
+      "pointerup",
+      releaseKey
+    );
+
+    key.addEventListener(
+      "pointercancel",
+      releaseKey
+    );
+
+    key.addEventListener(
+      "pointerleave",
+      releaseKey
+    );
+  });
+
+
+/* -------------------------------------------------------
+   WAVEFORM VISUALIZER
+------------------------------------------------------- */
+
+function drawVisualizer() {
+
+  if (
+    !canvas ||
+    !canvasContext ||
+    !analyser ||
+    !dataArray
+  ) {
+    animationFrameId = null;
+    return;
+  }
+
+  resizeCanvas();
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const width = rect.width;
+  const height = rect.height;
+
+  analyser.getByteTimeDomainData(
+    dataArray
+  );
+
+  canvasContext.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+  /*
+    Visible waveform.
+    The old version used the browser's
+    default black stroke on a black canvas.
+  */
+
+  canvasContext.strokeStyle =
+    "#35c759";
+
+  canvasContext.lineWidth = 3;
+
+  canvasContext.lineJoin =
+    "round";
+
+  canvasContext.lineCap =
+    "round";
+
+  canvasContext.beginPath();
+
+  const sliceWidth =
+    width / (dataArray.length - 1);
+
+  let x = 0;
+
+  for (
+    let i = 0;
+    i < dataArray.length;
+    i++
+  ) {
+
+    const normalized =
+      dataArray[i] / 255;
+
+    const y =
+      normalized * height;
+
+    if (i === 0) {
+
+      canvasContext.moveTo(
+        x,
+        y
+      );
+
+    } else {
+
+      canvasContext.lineTo(
+        x,
+        y
+      );
+    }
+
+    x += sliceWidth;
+  }
+
+  canvasContext.stroke();
+
+  if (playing) {
+
+    animationFrameId =
+      requestAnimationFrame(
+        drawVisualizer
+      );
+
+  } else {
+
+    animationFrameId = null;
+  }
+}
+
+
+/* -------------------------------------------------------
+   VISUALIZER START
+------------------------------------------------------- */
+
+function startVisualizer() {
+
+  if (
+    !canvas ||
+    !canvasContext ||
+    !analyser
+  ) {
+    return;
+  }
+
+  if (animationFrameId !== null) {
+    return;
+  }
+
+  resizeCanvas();
+
+  animationFrameId =
+    requestAnimationFrame(
+      drawVisualizer
+    );
+}
+
+
+/* -------------------------------------------------------
+   VISUALIZER STOP
+------------------------------------------------------- */
+
+function stopVisualizer() {
+
+  if (
+    animationFrameId !== null
+  ) {
+
+    cancelAnimationFrame(
+      animationFrameId
+    );
+
+    animationFrameId = null;
+  }
+}
+
+
+/* -------------------------------------------------------
+   WINDOW RESIZE
+------------------------------------------------------- */
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    resizeCanvas();
+
+    if (!playing) {
+      drawIdleVisualizer();
+    }
+  }
+);
+
+
+/* -------------------------------------------------------
+   INITIAL VISUALIZER STATE
+------------------------------------------------------- */
+
+resizeCanvas();
+drawIdleVisualizer();
+
+
+/* -------------------------------------------------------
+   KEYBOARD SHORTCUTS
+------------------------------------------------------- */
+
+const keyboardNotes = {
+
+  "a": 261.63,
+  "s": 293.66,
+  "d": 329.63,
+  "f": 349.23,
+  "g": 392.00,
+  "h": 440.00,
+  "j": 493.88,
+  "k": 523.25
+
+};
+
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (event.repeat) {
+      return;
+    }
+
+    const note =
+      keyboardNotes[
+        event.key.toLowerCase()
+      ];
+
+    if (note) {
+
+      startSynth(note);
+    }
+  }
+);
+
+
+document.addEventListener(
+  "keyup",
+  event => {
+
+    if (
+      keyboardNotes[
+        event.key.toLowerCase()
+      ]
+    ) {
+
+      stopSynth();
+    }
+  }
+);
+
+</script>
+
+</body>
+   </html>
