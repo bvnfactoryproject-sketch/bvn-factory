@@ -1,1 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Synth</title>
+</head>
+<body>
+  <h1>Live Synth</h1>
+  <button onclick="playTone()">▶ Play</button>
+  <button onclick="stopTone()">■ Stop</button>
 
+  <script>
+    let audioContext;
+    let oscillator;
+
+    function playTone() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      oscillator = audioContext.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.value = 440;
+      oscillator.connect(audioContext.destination);
+      oscillator.start();
+    }
+
+    function stopTone() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+    }
+  </script>
+</body>
+</html>
