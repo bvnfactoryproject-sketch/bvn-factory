@@ -801,10 +801,11 @@ WebGL is not available in your browser. This feature requires a modern browser w
 
 <script>
 // ===== DOM ELEMENTS =====
-const video = document.getElementById('mainVideo');
+const videoEl = document.getElementById('mainVideo');
 const splitVideo = document.getElementById('splitVideo');
 const reelVideo = document.getElementById('reelVideo');
 const trimVideo = document.getElementById('trimVideo');
+const canvas3D = document.getElementById('canvas3d');
 
 // ===== STATE =====
 let objectURL = null;
@@ -817,7 +818,7 @@ let animationRunning3D = true;
 let pumpAnimationId = null;
 let scene3D = null;
 let renderer3D = null;
-let canvas3D = null;
+let animationId3D = null;
 
 // ===== UTILITY =====
 const $ = id => document.getElementById(id);
@@ -827,6 +828,30 @@ function time(t) {
   const m = Math.floor(t / 60);
   const s = Math.floor(t % 60);
   return m + ':' + String(s).padStart(2, '0');
+}
+
+// ===== NAVIGATION =====
+function showScreen(screenId) {
+  const screens = document.querySelectorAll('.screen');
+  screens.forEach(s => s.classList.remove('active'));
+  
+  const navButtons = document.querySelectorAll('.nav button');
+  navButtons.forEach(b => b.classList.remove('active'));
+  
+  const targetScreen = document.getElementById(screenId);
+  if (targetScreen) {
+    targetScreen.classList.add('active');
+  }
+  
+  const targetNavBtn = document.querySelector(`.nav button[data-screen="${screenId}"]`);
+  if (targetNavBtn) {
+    targetNavBtn.classList.add('active');
+  }
+
+  // Initialize 3D scene when 3D screen is opened
+  if (screenId === '3d-visual') {
+    setTimeout(() => init3DScene(), 100);
+  }
 }
 
 // ===== VIDEO UPLOAD =====
@@ -852,7 +877,7 @@ $('file').addEventListener('change', e => {
   console.log('[VIDEO] New object URL created');
 
   // Set all video elements
-  video.src = objectURL;
+  videoEl.src = objectURL;
   splitVideo.src = objectURL;
   reelVideo.src = objectURL;
   trimVideo.src = objectURL;
@@ -874,40 +899,40 @@ $('file').addEventListener('change', e => {
   };
 
   const onVideoError = (evt) => {
-    console.error('[VIDEO] Error loading video:', evt, video.error);
+    console.error('[VIDEO] Error loading video:', evt, videoEl.error);
     $('status').textContent = 'This video format cannot be played by this browser. Please choose an MP4 video.';
     $('status').classList.remove('success');
     $('status').classList.add('error');
   };
 
   // Attach handlers to detect when video metadata is ready
-  video.addEventListener('loadedmetadata', () => {
-    console.log('[VIDEO] loadedmetadata event fired. Duration:', video.duration);
-    duration = video.duration;
+  videoEl.addEventListener('loadedmetadata', () => {
+    console.log('[VIDEO] loadedmetadata event fired. Duration:', videoEl.duration);
+    duration = videoEl.duration;
     onVideoReady();
   }, { once: true });
 
-  video.addEventListener('canplay', () => {
-    console.log('[VIDEO] canplay event fired. Duration:', video.duration);
+  videoEl.addEventListener('canplay', () => {
+    console.log('[VIDEO] canplay event fired. Duration:', videoEl.duration);
     if (duration === 0) {
-      duration = video.duration;
+      duration = videoEl.duration;
       onVideoReady();
     }
   }, { once: true });
 
-  video.addEventListener('durationchange', () => {
-    console.log('[VIDEO] durationchange event fired. Duration:', video.duration);
-    if (video.duration > 0 && duration === 0) {
-      duration = video.duration;
+  videoEl.addEventListener('durationchange', () => {
+    console.log('[VIDEO] durationchange event fired. Duration:', videoEl.duration);
+    if (videoEl.duration > 0 && duration === 0) {
+      duration = videoEl.duration;
       onVideoReady();
     }
   }, { once: true });
 
-  video.addEventListener('error', onVideoError);
+  videoEl.addEventListener('error', onVideoError);
 
   // Load the video
   console.log('[VIDEO] Calling load() on all video elements');
-  video.load();
+  videoEl.load();
   splitVideo.load();
   reelVideo.load();
   trimVideo.load();
@@ -961,7 +986,7 @@ function splitHere() {
     return;
   }
 
-  const t = video.currentTime;
+  const t = videoEl.currentTime;
 
   // Ignore duplicate points
   if (splitPoints.some(x => Math.abs(x - t) < 0.05)) return;
@@ -975,6 +1000,13 @@ function splitHere() {
 
   splitPoints.push(t);
   splitPoints.sort((a, b) => a - b);
+  rebuildClips();
+  renderClips();
+}
+
+function resetSplits() {
+  splitPoints = [];
+  selectedClip = 0;
   rebuildClips();
   renderClips();
 }
@@ -999,492 +1031,301 @@ function renderClips() {
     <b>CLIP ${i + 1}</b>
     <div>${time(c.start)} → ${time(c.end)}</div>
     <div class="clip-buttons">
-    <button onclick="selectClip(${i})">SELECT</button>
-    <button class="secondary" onclick="deleteClip(${i})">DELETE</button>
+    <button onclick="deleteClip(${i})">DELETE</button>
+    <button class="secondary" onclick="selectClip(${i})">SELECT</button>
     </div>
-    </div>`;
+    </div>
+    `;
   });
 
   $('clipList').innerHTML = html;
   $('splitClips').innerHTML = html;
-
-  updateNav();
-  drawTimeline();
-}
-
-function selectClip(i) {
-  if (i < 0 || i >= clips.length) return;
-  selectedClip = i;
-  const c = clips[i];
-
-  video.currentTime = c.start;
-  splitVideo.currentTime = c.start;
-
-  renderClips();
+  updateNavInfo();
 }
 
 function deleteClip(i) {
-  if (i < 0 || i >= clips.length) return;
-  if (clips.length <= 1) return;
-
-  let boundary = clips[i].end;
-  if (i === clips.length - 1) boundary = clips[i].start;
-
-  splitPoints = splitPoints.filter(x => Math.abs(x - boundary) > 0.05);
-
-  if (selectedClip >= clips.length - 1) {
-    selectedClip = Math.max(0, clips.length - 2);
-  }
-
+  if (i === 0 || i === clips.length - 1) return;
+  splitPoints.splice(i - 1, 1);
   rebuildClips();
+  renderClips();
+}
+
+function selectClip(i) {
+  selectedClip = i;
+  renderClips();
+  updateNavInfo();
+}
+
+function updateNavInfo() {
+  if (clips.length === 0) {
+    $('navInfo').textContent = 'No clip selected';
+  } else {
+    const c = clips[selectedClip];
+    $('navInfo').innerHTML = `<b>CLIP ${selectedClip + 1}</b><div>${time(c.start)} → ${time(c.end)}</div>`;
+  }
 }
 
 function previousClip() {
   if (selectedClip > 0) {
     selectedClip--;
-    selectClip(selectedClip);
+    renderClips();
+    updateNavInfo();
   }
 }
 
 function nextClip() {
   if (selectedClip < clips.length - 1) {
     selectedClip++;
-    selectClip(selectedClip);
+    renderClips();
+    updateNavInfo();
   }
 }
 
 function playSelected() {
-  if (!clips.length) return;
+  if (clips.length === 0) return;
   const c = clips[selectedClip];
-
-  video.currentTime = c.start;
-  video.play();
-
-  video.ontimeupdate = () => {
-    if (video.currentTime >= c.end) {
-      video.pause();
-      video.ontimeupdate = null;
-    }
-  };
+  videoEl.currentTime = c.start;
+  videoEl.play();
 }
 
-function resetSplits() {
-  splitPoints = [];
-  selectedClip = 0;
-  rebuildClips();
-}
-
-function updateNav() {
-  if (!clips.length) {
-    $('navInfo').textContent = 'No clip selected';
-    return;
-  }
-
-  const c = clips[selectedClip];
-  $('navInfo').innerHTML = `CLIP ${selectedClip + 1} / ${clips.length}<br>${time(c.start)} → ${time(c.end)}`;
-}
-
-function drawTimeline() {
-  const tl = $('timeline');
-  if (!tl) return;
-
-  tl.innerHTML = '';
-
-  if (!duration) return;
-
-  splitPoints.forEach(p => {
-    const m = document.createElement('div');
-    m.className = 'marker';
-    m.style.left = (p / duration * 100) + '%';
-    tl.appendChild(m);
-  });
-}
-
-// ===== SPLIT VIDEO TIME UPDATE =====
-splitVideo.addEventListener('timeupdate', () => {
-  $('currentTime').textContent = time(splitVideo.currentTime);
-  $('totalTime').textContent = time(splitVideo.duration);
-
-  if (clips.length) {
-    const c = clips[selectedClip];
-    if (splitVideo.currentTime < c.start || splitVideo.currentTime > c.end) {
-      const newClip = clips.findIndex(x =>
-        splitVideo.currentTime >= x.start && splitVideo.currentTime <= x.end
-      );
-      if (newClip !== -1) {
-        selectedClip = newClip;
-        renderClips();
-      }
-    }
-  }
-
-  // Update playhead marker
-  if (duration) {
-    const percent = (splitVideo.currentTime / duration) * 100;
-    const timeline = $('timeline');
-    let playhead = timeline.querySelector('.playhead');
-    if (!playhead) {
-      playhead = document.createElement('div');
-      playhead.className = 'playhead';
-      timeline.appendChild(playhead);
-    }
-    playhead.style.left = percent + '%';
-  }
-});
-
-// ===== MAIN VIDEO TIME UPDATE (for timeline) =====
-video.addEventListener('timeupdate', () => {
-  if (duration) drawTimeline();
-});
-
-// ===== SCREEN NAVIGATION =====
-function showScreen(id) {
-  // Hide all screens
-  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
-  const screenEl = $(id);
-  if (screenEl) {
-    screenEl.classList.add('active');
-  }
-
-  // Update nav buttons
-  document.querySelectorAll('.nav button').forEach(b => {
-    b.classList.toggle('active', b.dataset.screen === id);
-  });
-
-  // Sync video position when switching screens
-  if (objectURL) {
-    if (id === 'split') splitVideo.currentTime = video.currentTime;
-    if (id === 'reel') reelVideo.currentTime = video.currentTime;
-    if (id === 'trim') trimVideo.currentTime = video.currentTime;
-  }
-
-  // Initialize 3D scene when entering 3d-visual screen
-  if (id === '3d-visual' && !scene3D) {
-    init3DScene();
-  }
-}
-
-// ===== REEL MODES =====
+// ===== REEL SCREEN =====
 function fitMode() {
   reelVideo.style.objectFit = 'contain';
+  reelVideo.style.objectPosition = 'center';
 }
 
 function cropMode() {
   reelVideo.style.objectFit = 'cover';
-}
-
-// ===== 3D VISUAL IMPLEMENTATION =====
-function init3DScene() {
-  canvas3D = $('canvas3d');
-  if (!canvas3D) return;
-
-  const webglFallback = $('webglFallback');
-
-  // Check WebGL support
-  const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-  if (!gl) {
-    webglFallback.style.display = 'block';
-    canvas3D.style.display = 'none';
-    return;
-  }
-
-  // Create simple 3D scene using canvas context
-  const ctx = canvas3D.getContext('2d');
-  if (!ctx) {
-    webglFallback.style.display = 'block';
-    canvas3D.style.display = 'none';
-    return;
-  }
-
-  // Store context for animation
-  scene3D = {
-    ctx: ctx,
-    canvas: canvas3D,
-    rotation: 0,
-    time: 0,
-    particles: generateParticles(150)
-  };
-
-  // Resize canvas
-  resizeCanvas3D();
-  window.addEventListener('resize', resizeCanvas3D);
-
-  // Start animation
-  animate3DScene();
-}
-
-function generateParticles(count) {
-  const particles = [];
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * 400 - 200,
-      y: Math.random() * 400 - 200,
-      z: Math.random() * 400 - 200,
-      vx: (Math.random() - 0.5) * 2,
-      vy: (Math.random() - 0.5) * 2,
-      vz: (Math.random() - 0.5) * 2,
-      size: Math.random() * 2 + 1,
-      color: ['#2f7ff5', '#3a8aff', '#51cf66', '#ffd700', '#ff6b6b'][Math.floor(Math.random() * 5)]
-    });
-  }
-  return particles;
-}
-
-function resizeCanvas3D() {
-  if (!canvas3D) return;
-  const parent = canvas3D.parentElement;
-  if (parent) {
-    canvas3D.width = parent.clientWidth;
-    canvas3D.height = 400;
-  }
-}
-
-function rotate3DPoint(x, y, z, angleX, angleY, angleZ) {
-  // Rotate around X
-  let cy = Math.cos(angleX);
-  let sy = Math.sin(angleX);
-  let ty = y * cy - z * sy;
-  let tz = y * sy + z * cy;
-
-  // Rotate around Y
-  cy = Math.cos(angleY);
-  sy = Math.sin(angleY);
-  let tx = x * cy + tz * sy;
-  tz = -x * sy + tz * cy;
-
-  // Rotate around Z
-  cy = Math.cos(angleZ);
-  sy = Math.sin(angleZ);
-  let fx = tx * cy - ty * sy;
-  let fy = tx * sy + ty * cy;
-
-  return { x: fx, y: fy, z: tz };
-}
-
-function animate3DScene() {
-  if (!scene3D || !animationRunning3D) {
-    if (animationRunning3D) requestAnimationFrame(animate3DScene);
-    return;
-  }
-
-  const { ctx, canvas, particles } = scene3D;
-  scene3D.rotation += 0.02;
-  scene3D.time += 1;
-
-  // Clear canvas with fade
-  ctx.fillStyle = 'rgba(9, 13, 18, 0.1)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  const scale = 0.5;
-
-  // Update and draw particles
-  particles.forEach(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.z += p.vz;
-
-    // Wrap around boundaries
-    if (Math.abs(p.x) > 200) p.vx *= -1;
-    if (Math.abs(p.y) > 200) p.vy *= -1;
-    if (Math.abs(p.z) > 200) p.vz *= -1;
-
-    const rotated = rotate3DPoint(p.x, p.y, p.z, 
-      scene3D.rotation * 0.5, 
-      scene3D.rotation, 
-      scene3D.rotation * 0.3
-    );
-
-    const screenX = centerX + rotated.x * scale;
-    const screenY = centerY + rotated.y * scale;
-    const depth = (rotated.z + 200) / 400;
-
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = Math.max(0.2, depth);
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, p.size * depth, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Draw wireframe sphere
-  ctx.strokeStyle = 'rgba(47, 127, 245, 0.3)';
-  ctx.lineWidth = 1;
-  ctx.globalAlpha = 0.5;
-
-  for (let lat = 0; lat < 6; lat++) {
-    for (let lon = 0; lon < 12; lon++) {
-      const angle1 = (lat / 6) * Math.PI;
-      const angle2 = ((lat + 1) / 6) * Math.PI;
-      const angle3 = (lon / 12) * Math.PI * 2;
-      const angle4 = ((lon + 1) / 12) * Math.PI * 2;
-
-      const r = 150;
-      const p1 = {
-        x: r * Math.sin(angle1) * Math.cos(angle3),
-        y: r * Math.cos(angle1),
-        z: r * Math.sin(angle1) * Math.sin(angle3)
-      };
-
-      const p2 = {
-        x: r * Math.sin(angle2) * Math.cos(angle3),
-        y: r * Math.cos(angle2),
-        z: r * Math.sin(angle2) * Math.sin(angle3)
-      };
-
-      const rot1 = rotate3DPoint(p1.x, p1.y, p1.z, scene3D.rotation * 0.3, scene3D.rotation, scene3D.rotation * 0.5);
-      const rot2 = rotate3DPoint(p2.x, p2.y, p2.z, scene3D.rotation * 0.3, scene3D.rotation, scene3D.rotation * 0.5);
-
-      const sx1 = centerX + rot1.x * scale;
-      const sy1 = centerY + rot1.y * scale;
-      const sx2 = centerX + rot2.x * scale;
-      const sy2 = centerY + rot2.y * scale;
-
-      if (lon === 0) {
-        ctx.beginPath();
-        ctx.moveTo(sx1, sy1);
-      }
-      ctx.lineTo(sx2, sy2);
-    }
-  }
-  ctx.stroke();
-
-  ctx.globalAlpha = 1;
-  requestAnimationFrame(animate3DScene);
-}
-
-function toggle3DAnimation() {
-  animationRunning3D = !animationRunning3D;
-  if (animationRunning3D) {
-    animate3DScene();
-  }
-}
-
-function reset3DScene() {
-  if (scene3D) {
-    scene3D.rotation = 0;
-    scene3D.time = 0;
-    scene3D.particles = generateParticles(150);
-  }
-}
-
-// ===== PUMPING STATION IMPLEMENTATION =====
-let pumpState = {
-  active: false,
-  pressure: 0,
-  flow: 0,
-  temp: 72,
-  power: 0,
-  maxPressure: 100,
-  maxFlow: 150
-};
-
-function togglePumpStation() {
-  pumpState.active = !pumpState.active;
-  updatePumpDisplay();
-  animatePump();
-}
-
-function resetPumpStation() {
-  pumpState.active = false;
-  pumpState.pressure = 0;
-  pumpState.flow = 0;
-  pumpState.temp = 72;
-  pumpState.power = 0;
-  updatePumpDisplay();
-  if (pumpAnimationId) {
-    cancelAnimationFrame(pumpAnimationId);
-    pumpAnimationId = null;
-  }
-}
-
-function updatePumpDisplay() {
-  const indicator = $('pumpIndicator');
-  const statusText = $('pumpStatusText');
-  const pressureEl = $('pumpPressure');
-  const flowEl = $('pumpFlow');
-  const tempEl = $('pumpTemp');
-  const powerEl = $('pumpPower');
-  const piston = $('pumpPiston');
-  const flowIndicator = $('flowIndicator');
-  const flowStatus = $('flowStatus');
-  const flowBarFill = $('flowBarFill');
-  const toggleBtn = $('pumpToggleBtn');
-
-  if (pumpState.active) {
-    indicator.classList.remove('off');
-    indicator.style.background = '#51cf66';
-    statusText.textContent = 'PUMPING';
-    toggleBtn.textContent = 'POWER OFF';
-  } else {
-    indicator.classList.add('off');
-    indicator.style.background = '#666';
-    statusText.textContent = 'STANDBY';
-    toggleBtn.textContent = 'POWER ON';
-  }
-
-  // Update numerical displays
-  pressureEl.textContent = Math.round(pumpState.pressure);
-  flowEl.textContent = Math.round(pumpState.flow);
-  tempEl.textContent = Math.round(pumpState.temp);
-  powerEl.textContent = (pumpState.power / 1000).toFixed(1);
-
-  // Update visual indicators
-  if (pumpState.active) {
-    piston.classList.remove('stopped');
-    flowIndicator.classList.remove('stopped');
-    flowStatus.textContent = 'Flow: ' + Math.round(pumpState.flow) + ' GPM';
-  } else {
-    piston.classList.add('stopped');
-    flowIndicator.classList.add('stopped');
-    flowStatus.textContent = 'Flow: Standby';
-  }
-
-  const flowPercent = (pumpState.flow / pumpState.maxFlow) * 100;
-  flowBarFill.style.width = flowPercent + '%';
-}
-
-function animatePump() {
-  if (!pumpState.active) return;
-
-  // Simulate pump dynamics
-  pumpState.pressure = Math.min(pumpState.pressure + 2, pumpState.maxPressure);
-  pumpState.flow = Math.min(pumpState.flow + 3, pumpState.maxFlow);
-  pumpState.temp = Math.min(pumpState.temp + 0.5, 95);
-  pumpState.power = pumpState.flow * 0.8;
-
-  updatePumpDisplay();
-
-  if (pumpState.active) {
-    pumpAnimationId = requestAnimationFrame(animatePump);
-  }
+  reelVideo.style.objectPosition = 'center';
 }
 
 // ===== EXPORT =====
 function exportVideo() {
   if (!objectURL) {
-    $('exportStatus').textContent = 'Upload a video first.';
+    $('exportStatus').textContent = 'No video loaded.';
     $('exportStatus').classList.add('error');
     return;
   }
 
-  // Browser-safe fallback: download original
   const a = document.createElement('a');
   a.href = objectURL;
-  a.download = 'Live-Synthist-Video.mp4';
+  a.download = 'export.mp4';
   document.body.appendChild(a);
   a.click();
-  a.remove();
+  document.body.removeChild(a);
 
-  $('exportStatus').textContent = '✓ Export started. Original video preserved.';
+  $('exportStatus').textContent = '✓ Export started';
   $('exportStatus').classList.remove('error');
   $('exportStatus').classList.add('success');
 }
 
-// ===== INITIALIZE =====
-rebuildClips();
-console.log('[APP] Live Synthist initialized');
+// ===== 3D SCENE =====
+function init3DScene() {
+  if (!canvas3D) {
+    console.warn('3D canvas not found');
+    $('webglFallback').style.display = 'block';
+    return;
+  }
+
+  try {
+    const ctx = canvas3D.getContext('webgl2') || canvas3D.getContext('webgl');
+    if (!ctx) {
+      console.warn('WebGL not supported');
+      $('webglFallback').style.display = 'block';
+      return;
+    }
+
+    // Set canvas size
+    canvas3D.width = canvas3D.offsetWidth;
+    canvas3D.height = canvas3D.offsetHeight;
+
+    // Simple WebGL setup with basic vertex/fragment shaders
+    const vertexShader = `
+      precision highp float;
+      attribute vec3 position;
+      uniform mat4 uMatrix;
+      varying vec3 vPos;
+      
+      void main() {
+        vPos = position;
+        gl_Position = uMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      precision highp float;
+      varying vec3 vPos;
+      
+      void main() {
+        gl_FragColor = vec4(abs(vPos.x), abs(vPos.y), abs(vPos.z), 1.0);
+      }
+    `;
+
+    // Compile shaders
+    const vs = ctx.createShader(ctx.VERTEX_SHADER);
+    ctx.shaderSource(vs, vertexShader);
+    ctx.compileShader(vs);
+    
+    const fs = ctx.createShader(ctx.FRAGMENT_SHADER);
+    ctx.shaderSource(fs, fragmentShader);
+    ctx.compileShader(fs);
+
+    // Link program
+    const program = ctx.createProgram();
+    ctx.attachShader(program, vs);
+    ctx.attachShader(program, fs);
+    ctx.linkProgram(program);
+
+    if (!ctx.getProgramParameter(program, ctx.LINK_STATUS)) {
+      console.warn('Shader program link failed');
+      $('webglFallback').style.display = 'block';
+      return;
+    }
+
+    ctx.useProgram(program);
+
+    // Create cube geometry
+    const vertices = [
+      -0.5, -0.5, -0.5,
+       0.5, -0.5, -0.5,
+       0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5, -0.5,  0.5,
+       0.5, -0.5,  0.5,
+       0.5,  0.5,  0.5,
+      -0.5,  0.5,  0.5
+    ];
+
+    const indices = [
+      0, 1, 2, 2, 3, 0,
+      4, 6, 5, 4, 7, 6,
+      0, 4, 5, 5, 1, 0,
+      2, 6, 7, 7, 3, 2,
+      0, 3, 7, 7, 4, 0,
+      1, 5, 6, 6, 2, 1
+    ];
+
+    const vbo = ctx.createBuffer();
+    ctx.bindBuffer(ctx.ARRAY_BUFFER, vbo);
+    ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(vertices), ctx.STATIC_DRAW);
+
+    const ibo = ctx.createBuffer();
+    ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, ibo);
+    ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), ctx.STATIC_DRAW);
+
+    const posLocation = ctx.getAttribLocation(program, 'position');
+    ctx.vertexAttribPointer(posLocation, 3, ctx.FLOAT, false, 0, 0);
+    ctx.enableVertexAttribArray(posLocation);
+
+    // Animation loop
+    let angle = 0;
+    const render = () => {
+      if (!animationRunning3D) {
+        animationId3D = requestAnimationFrame(render);
+        return;
+      }
+
+      angle += 0.01;
+
+      // Simple rotation matrix
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const matrix = [
+        cos, 0, sin, 0,
+        0, 1, 0, 0,
+        -sin, 0, cos, 0,
+        0, 0, 0, 1
+      ];
+
+      ctx.clearColor(0, 0, 0, 1);
+      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+      ctx.enable(ctx.DEPTH_TEST);
+
+      const uMatrix = ctx.getUniformLocation(program, 'uMatrix');
+      ctx.uniformMatrix4fv(uMatrix, false, matrix);
+
+      ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_SHORT, 0);
+      animationId3D = requestAnimationFrame(render);
+    };
+
+    render();
+  } catch (err) {
+    console.error('3D initialization error:', err);
+    $('webglFallback').style.display = 'block';
+  }
+}
+
+function reset3DScene() {
+  if (animationId3D) {
+    cancelAnimationFrame(animationId3D);
+  }
+  canvas3D.width = canvas3D.offsetWidth;
+  canvas3D.height = canvas3D.offsetHeight;
+  animationRunning3D = true;
+  init3DScene();
+}
+
+function toggle3DAnimation() {
+  animationRunning3D = !animationRunning3D;
+  const btn = document.querySelector('#3d-visual .button-group.dual button:nth-child(2)');
+  if (btn) {
+    btn.textContent = animationRunning3D ? 'PAUSE' : 'RESUME';
+  }
+}
+
+// ===== PUMPING STATION =====
+function togglePumpStation() {
+  pumpActive = !pumpActive;
+  const btn = $('pumpToggleBtn');
+  const indicator = $('pumpIndicator');
+  const statusText = $('pumpStatusText');
+  const piston = $('pumpPiston');
+  const flowIndicator = $('flowIndicator');
+  const flowStatus = $('flowStatus');
+
+  if (pumpActive) {
+    btn.textContent = 'POWER OFF';
+    indicator.classList.remove('off');
+    indicator.style.background = '#51cf66';
+    statusText.textContent = 'RUNNING';
+    piston.classList.remove('stopped');
+    flowIndicator.classList.remove('stopped');
+    flowStatus.textContent = 'Flow: Active';
+
+    // Simulate pump values
+    let pressure = 0;
+    let flow = 0;
+    const pumpInterval = setInterval(() => {
+      if (!pumpActive) {
+        clearInterval(pumpInterval);
+        return;
+      }
+      pressure = Math.min(100, pressure + Math.random() * 10);
+      flow = Math.min(50, flow + Math.random() * 3);
+      $('pumpPressure').textContent = Math.floor(pressure);
+      $('pumpFlow').textContent = Math.floor(flow);
+      $('pumpPower').textContent = (pressure * flow / 100).toFixed(1);
+      $('flowBarFill').style.width = (flow * 2) + '%';
+    }, 500);
+  } else {
+    btn.textContent = 'POWER ON';
+    indicator.classList.add('off');
+    indicator.style.background = '#666';
+    statusText.textContent = 'STANDBY';
+    piston.classList.add('stopped');
+    flowIndicator.classList.add('stopped');
+    flowStatus.textContent = 'Flow: Standby';
+    $('pumpPressure').textContent = '0';
+    $('pumpFlow').textContent = '0';
+    $('pumpPower').textContent = '0';
+    $('flowBarFill').style.width = '0%';
+  }
+}
+
+function resetPumpStation() {
+  pumpActive = false;
+  togglePumpStation(); // Ensure it's off
+}
 </script>
 </body>
 </html>
