@@ -1,1 +1,475 @@
+CORRECT AND UPGRADE THE EXISTING LIVE SYNTHIST APP.
 
+IMPORTANT:
+DO NOT DELETE ANY CURRENT WORKING FEATURE.
+DO NOT REPLACE THE APP WITH A STATIC MOCKUP.
+DO NOT OUTPUT OR DISPLAY THIS INSTRUCTION TEXT INSIDE THE APP.
+DO NOT CREATE A SINGLE LONG FORM/SHEET UI FOR EVERYTHING.
+
+CURRENT PROBLEMS TO FIX:
+1. Uploaded video is not appearing/playing reliably.
+2. SMART SPLIT / NAVIGATE is appearing as one continuous sheet instead of a proper multi-screen workflow.
+3. The app must behave like a real mobile video editing/testing interface.
+4. All existing working controls must remain.
+
+==================================================
+A. VIDEO UPLOAD MUST WORK
+==================================================
+
+Keep the existing local browser video upload.
+
+When the user selects a video:
+
+- Create a valid URL using URL.createObjectURL(file).
+- Assign it to the main video element.
+- Assign the same source to the Reel preview.
+- Remove "No video selected".
+- Show the selected filename.
+- Show the video preview immediately after metadata loads.
+- Show duration correctly.
+- Enable Play/Pause.
+- Enable Sound/Mute.
+- Enable seek control.
+- Keep playsinline.
+- Do not upload the video to a server.
+- Do not require login.
+- Do not require an external API.
+- Do not require an internet connection after the page itself has loaded.
+
+Use robust video loading logic:
+- video.src = objectURL
+- video.load()
+- reelVideo.src = objectURL
+- reelVideo.load()
+
+Handle:
+loadedmetadata
+loadeddata
+canplay
+timeupdate
+error
+
+If the browser cannot decode the selected file, show:
+"Video format is not supported by this browser."
+
+Otherwise the actual selected video must visibly appear.
+
+==================================================
+B. MOBILE MULTI-SCREEN UI
+==================================================
+
+DO NOT KEEP ALL FEATURES AS ONE LONG SINGLE SHEET.
+
+Create a mobile-first navigation system with separate screens.
+
+Use these screens:
+
+SCREEN 1 — HOME / VIDEO
+--------------------------------
+Show:
+LIVE SYNTHIST
+VIDEO UPLOAD
+MAIN VIDEO PREVIEW
+PLAY
+PAUSE
+SOUND / MUTE
+SEEK
+CURRENT TIME / TOTAL TIME
+
+Then show:
+REAL / MEI
+BALANCE
+
+Add a clear:
+"OPEN SMART EDITOR →"
+
+button.
+
+SCREEN 2 — SMART SPLIT
+--------------------------------
+Title:
+SMART SPLIT
+
+Show the video preview at the top.
+
+Show:
+Current playback time
+Current position
+
+Buttons:
+PLAY / PAUSE
+SPLIT HERE
+RESET SPLITS
+
+When SPLIT HERE is pressed:
+- create a split point at the current playback position
+- never modify the original video
+- update the clip list immediately.
+
+Show a vertical clip list.
+
+Example:
+
+CLIP 01
+00:00 — 00:05
+[SELECT]
+
+CLIP 02
+00:05 — 00:12
+[SELECT]
+
+CLIP 03
+00:12 — END
+[SELECT]
+
+Each clip must be selectable.
+
+Selected clip must be visually highlighted.
+
+SCREEN 3 — NAVIGATE
+--------------------------------
+Title:
+NAVIGATE
+
+Show selected clip information.
+
+Show large controls:
+
+← PREVIOUS CLIP
+▶ PLAY CLIP
+NEXT CLIP →
+
+Also show:
+START
+END
+DELETE
+
+NEXT CLIP must select the next clip and move the video to that clip's start.
+
+PREVIOUS CLIP must select the previous clip and move the video to that clip's start.
+
+PLAY CLIP must play from the selected clip's start.
+
+Do not allow NEXT beyond the final clip.
+Do not allow PREVIOUS before the first clip.
+
+SCREEN 4 — REEL
+--------------------------------
+Title:
+REEL 9:16
+
+Show vertical 9:16 video preview.
+
+Buttons:
+FIT
+CROP
+
+FIT:
+object-fit: contain
+
+CROP:
+object-fit: cover
+
+SCREEN 5 — TRIM
+--------------------------------
+Title:
+TRIM
+
+Show:
+START slider
+END slider
+
+Show:
+Start time
+End time
+
+Prevent Start from going beyond End.
+
+SCREEN 6 — EXPORT
+--------------------------------
+Title:
+EXPORT
+
+Show selected settings and:
+EXPORT VIDEO
+
+If real browser-side encoding is not available, clearly show:
+"Browser export is not available for this format yet."
+
+Do not pretend that an export occurred.
+
+==================================================
+C. NAVIGATION
+==================================================
+
+Use a proper mobile navigation system.
+
+Only ONE screen/panel should be active at a time.
+
+Add:
+← BACK
+
+where appropriate.
+
+Navigation flow:
+
+HOME
+ ↓
+SMART EDITOR
+ ↓
+SMART SPLIT
+ ↓
+NAVIGATE
+ ↓
+REEL
+ ↓
+TRIM
+ ↓
+EXPORT
+
+But the user must also be able to move back without losing the uploaded video or split data.
+
+Keep the uploaded video object URL alive while navigating between screens.
+
+Do not reload the page during navigation.
+
+Do not lose:
+- video
+- current time
+- split points
+- selected clip
+- REAL/MEI value
+- BALANCE value
+- trim start
+- trim end
+
+==================================================
+D. SMART SPLIT DATA MODEL
+==================================================
+
+Create a JavaScript array for split points/clips.
+
+Example:
+
+let splitPoints = [0];
+
+When SPLIT HERE is pressed:
+- get video.currentTime
+- ignore duplicate split points
+- ignore split at 0
+- ignore split at duration
+- insert point in sorted order
+- rebuild clips.
+
+Create clips from split points.
+
+For example:
+
+duration = 30
+
+splitPoints:
+[0, 10, 20, 30]
+
+creates:
+
+Clip 1 = 0 → 10
+Clip 2 = 10 → 20
+Clip 3 = 20 → 30
+
+Every clip must contain:
+id
+start
+end
+
+==================================================
+E. SELECTED CLIP NAVIGATION
+==================================================
+
+Maintain:
+
+let selectedClipIndex = 0;
+
+When a clip is selected:
+- update selectedClipIndex
+- set video.currentTime to clip.start
+- update UI
+- highlight selected clip.
+
+NEXT:
+selectedClipIndex + 1
+
+PREVIOUS:
+selectedClipIndex - 1
+
+START:
+set video.currentTime to selected clip start
+
+END:
+set video.currentTime to selected clip end
+
+DELETE:
+remove the selected split/clip safely without deleting the original uploaded video.
+
+After deletion:
+rebuild clip list
+select a valid remaining clip.
+
+==================================================
+F. AUTOMATIC CLIP TRACKING
+==================================================
+
+During playback:
+
+If the current video time reaches the selected clip end:
+- pause or move according to the current navigation mode
+- update selected clip appropriately.
+
+Do not allow the player to visually jump randomly.
+
+The current clip should always be clear.
+
+==================================================
+G. TIMELINE
+==================================================
+
+Add a compact visual timeline inside SMART SPLIT.
+
+Show:
+- total duration
+- split markers
+- current playback marker
+- selected clip range
+
+Timeline must update during playback.
+
+The timeline must be touch-friendly on mobile.
+
+==================================================
+H. REAL / MEI
+==================================================
+
+Keep the existing REAL / MEI slider.
+
+Display:
+REAL 0%
+MEI 100%
+
+Value must update correctly.
+
+Do NOT claim that this slider scientifically proves whether a video is real or fake.
+
+It is only a user-controlled experimental balance/control.
+
+==================================================
+I. BALANCE
+==================================================
+
+Keep BALANCE.
+
+If slider is 0:
+REAL: 0%
+MEI: 100%
+
+If slider is 50:
+REAL: 50%
+MEI: 50%
+
+If slider is 100:
+REAL: 100%
+MEI: 0%
+
+The displayed values must always match the slider.
+
+==================================================
+J. UI DESIGN
+==================================================
+
+Keep the current dark Live Synthist visual identity.
+
+Mobile-first.
+
+Large touch buttons.
+
+Rounded cards.
+
+High contrast.
+
+Do not make the entire application one giant vertical form.
+
+Use separate screen sections with:
+- screen title
+- back button
+- clear primary action
+- compact navigation.
+
+Add a bottom navigation bar where useful:
+
+HOME
+SPLIT
+NAVIGATE
+REEL
+EXPORT
+
+The active screen must be visibly highlighted.
+
+==================================================
+K. OFFLINE REQUIREMENT
+==================================================
+
+No external libraries.
+No CDN.
+No framework.
+No external API.
+
+Use only:
+HTML
+CSS
+JavaScript
+
+The application must work as a GitHub Pages static website.
+
+==================================================
+L. ERROR PREVENTION
+==================================================
+
+Before finalizing the code:
+
+- Make sure all getElementById IDs exist.
+- Make sure every event listener refers to an existing element.
+- Make sure all functions are defined before use.
+- Make sure there are no syntax errors.
+- Make sure braces and parentheses are balanced.
+- Make sure the page loads normally.
+- Make sure uploading a video does not reload the page.
+- Make sure navigating between screens does not reload the page.
+- Make sure object URLs are revoked only when replacing the video, not during normal navigation.
+
+==================================================
+M. IMPORTANT SCOPE
+==================================================
+
+IMPLEMENT ONLY THIS CORRECTION/UPGRADE NOW:
+
+1. Reliable video upload and preview
+2. Real mobile multi-screen navigation
+3. Smart Split
+4. Clip selection
+5. Previous / Next navigation
+6. Start / End / Delete controls
+7. Timeline
+8. Reel screen
+9. Trim screen
+10. Export screen
+11. Existing REAL / MEI and BALANCE preserved
+
+DO NOT IMPLEMENT PHASE 2 OR PHASE 3.
+DO NOT ADD AI DETECTION.
+DO NOT CLAIM SCIENTIFIC PROOF.
+DO NOT CLAIM TIME TRAVEL IS PROVEN.
+DO NOT ADD HYPOTHESES AS FACTS.
+
+FINAL REQUIREMENT:
+RETURN A COMPLETE, WORKING SINGLE index.html FILE.
+DO NOT RETURN PARTIAL CODE.
+DO NOT REMOVE EXISTING FUNCTIONALITY.
+DO NOT DISPLAY THIS PROMPT IN THE APPLICATION.
