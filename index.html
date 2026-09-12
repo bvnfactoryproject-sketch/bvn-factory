@@ -5,34 +5,373 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Live Synthist</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#090d12;color:#fff;font-family:Arial,sans-serif}
-.app{max-width:560px;margin:auto;padding:18px 14px 80px}
-h1{text-align:center;font-size:42px;margin:20px 0 30px}
-.screen{display:none}
-.screen.active{display:block}
-.card{background:#131a22;border:2px solid #26313e;border-radius:25px;padding:22px;margin:14px 0}
-h2{margin:0 0 18px;font-size:25px}
-button{border:0;border-radius:16px;padding:17px 18px;font-size:18px;font-weight:bold;background:#2f7ff5;color:white;width:100%;margin:6px 0}
-button.secondary{background:#263342}
-button.danger{background:#b83232}
-button:disabled{opacity:.45}
-input[type=file]{display:none}
-.upload{display:block;text-align:center;background:#2f7ff5;border-radius:16px;padding:18px;font-size:18px;font-weight:bold}
-video{width:100%;max-height:520px;background:#000;border-radius:20px;margin-top:14px}
-.value{text-align:center;font-size:42px;font-weight:bold}
-input[type=range]{width:100%;accent-color:#2f7ff5}
-.labels{display:flex;justify-content:space-between;color:#aeb8c7;font-size:17px}
-.nav{position:sticky;bottom:8px;background:#111923;border:1px solid #303b49;border-radius:20px;padding:8px;display:flex;gap:5px}
-.nav button{font-size:12px;padding:12px 4px;margin:0}
-.nav button.active{background:#2f7ff5}
-.clip{background:#202a36;border:2px solid #334153;border-radius:15px;padding:13px;margin:8px 0}
-.clip.selected{border-color:#2f7ff5;background:#172d4c}
-.clip button{padding:10px;font-size:14px}
-.timeline{position:relative;height:42px;background:#222c37;border-radius:10px;overflow:hidden;margin:12px 0}
-.marker{position:absolute;top:0;bottom:0;width:3px;background:#fff}
-.info{text-align:center;color:#aeb8c7;padding:8px}
-.status{text-align:center;color:#6fa5ff;min-height:24px}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #090d12;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 0;
+}
+
+.app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 18px 14px 120px;
+  min-height: 100vh;
+}
+
+h1 {
+  text-align: center;
+  font-size: 42px;
+  margin: 20px 0 30px;
+  letter-spacing: -1px;
+}
+
+h2 {
+  margin: 0 0 18px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.card {
+  background: #131a22;
+  border: 2px solid #26313e;
+  border-radius: 25px;
+  padding: 22px;
+  margin: 14px 0;
+}
+
+button {
+  border: 0;
+  border-radius: 16px;
+  padding: 17px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #2f7ff5;
+  color: white;
+  width: 100%;
+  margin: 6px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+
+button:hover {
+  background: #3a8aff;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button.secondary {
+  background: #263342;
+}
+
+button.secondary:hover {
+  background: #2f3b4d;
+}
+
+button.danger {
+  background: #b83232;
+}
+
+button.danger:hover {
+  background: #d63c3c;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #26313e;
+  border-radius: 12px;
+  background: #0a0e13;
+  color: #fff;
+  font-size: 16px;
+  margin: 8px 0;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #2f7ff5;
+  height: 6px;
+  margin: 12px 0;
+}
+
+.upload {
+  display: block;
+  text-align: center;
+  background: #2f7ff5;
+  border-radius: 16px;
+  padding: 22px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 6px 0;
+}
+
+.upload:hover {
+  background: #3a8aff;
+}
+
+.upload:active {
+  transform: scale(0.98);
+}
+
+video {
+  width: 100%;
+  max-height: 480px;
+  background: #000;
+  border-radius: 20px;
+  margin: 16px 0;
+  display: block;
+}
+
+.value {
+  text-align: center;
+  font-size: 52px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: #2f7ff5;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  color: #aeb8c7;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.labels b {
+  font-weight: 600;
+  color: #fff;
+}
+
+.info {
+  text-align: center;
+  color: #aeb8c7;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.info b {
+  color: #2f7ff5;
+  font-weight: 600;
+}
+
+.status {
+  text-align: center;
+  color: #6fa5ff;
+  min-height: 24px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.error {
+  color: #ff6b6b;
+}
+
+.success {
+  color: #51cf66;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111923;
+  border-top: 2px solid #26313e;
+  padding: 8px 14px;
+  display: flex;
+  gap: 5px;
+  z-index: 1000;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.nav button {
+  flex: 1;
+  font-size: 11px;
+  padding: 12px 4px;
+  margin: 0;
+  border-radius: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav button.active {
+  background: #2f7ff5;
+}
+
+.clip {
+  background: #202a36;
+  border: 2px solid #334153;
+  border-radius: 15px;
+  padding: 14px;
+  margin: 8px 0;
+}
+
+.clip.selected {
+  border-color: #2f7ff5;
+  background: #172d4c;
+}
+
+.clip b {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.clip div {
+  color: #aeb8c7;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.clip button {
+  padding: 10px;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.clip-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.clip-buttons button {
+  margin: 0;
+}
+
+.timeline {
+  position: relative;
+  height: 40px;
+  background: #222c37;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+  border: 2px solid #26313e;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #ff6b6b;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #2f7ff5;
+}
+
+.reel-container {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 9 / 16;
+  margin: 16px auto;
+  background: #000;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 3px solid #26313e;
+}
+
+.reel-container video {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  max-height: none;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #aeb8c7;
+  font-size: 13px;
+  margin: 8px 0;
+  gap: 8px;
+}
+
+.time-display span {
+  color: #2f7ff5;
+  font-weight: 600;
+}
+
+.slider-group {
+  margin: 16px 0;
+}
+
+.slider-group label {
+  display: block;
+  font-size: 13px;
+  color: #aeb8c7;
+  margin-bottom: 6px;
+}
+
+.slider-group input[type="range"] {
+  margin: 8px 0;
+}
+
+p {
+  margin: 12px 0;
+  color: #aeb8c7;
+  font-size: 14px;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.button-group button {
+  margin: 0;
+  padding: 14px 8px;
+  font-size: 14px;
+}
+
+.button-group.dual {
+  grid-template-columns: 1fr 1fr;
+}
+
+.large-button {
+  padding: 20px 18px;
+  font-size: 18px;
+  margin: 8px 0;
+}
 </style>
 </head>
 
@@ -41,10 +380,10 @@ input[type=range]{width:100%;accent-color:#2f7ff5}
 
 <h1>Live Synthist</h1>
 
-<!-- HOME -->
+<!-- HOME SCREEN -->
 <section id="home" class="screen active">
 <div class="card">
-<h2>VIDEO</h2>
+<h2>📹 VIDEO</h2>
 <label class="upload">
 UPLOAD VIDEO
 <input id="file" type="file" accept="video/*">
@@ -62,7 +401,7 @@ UPLOAD VIDEO
 </div>
 
 <div class="card">
-<h2>BALANCE</h2>
+<h2>⚖️ BALANCE</h2>
 <input id="balance" type="range" min="0" max="100" value="50">
 <div class="labels">
 <b id="realBal">REAL: 50%</b>
@@ -71,88 +410,104 @@ UPLOAD VIDEO
 </div>
 
 <div class="card">
-<h2>SMART SPLIT / NAVIGATE</h2>
+<h2>✂️ SMART SPLIT</h2>
 <p class="info">Create selectable clips from the current video position.</p>
-<button onclick="splitHere()">✂ SPLIT HERE</button>
-<button class="secondary" onclick="resetSplits()">RESET SPLITS</button>
+<button class="large-button" onclick="splitHere()">✂️ SPLIT HERE</button>
+<button class="secondary large-button" onclick="resetSplits()">RESET SPLITS</button>
 <div id="clipList"></div>
 </div>
 
 <div class="card">
-<h2>3D / PUMPING STATION</h2>
-<button class="secondary" onclick="togglePump()">🎮 PUMPING STATION</button>
+<h2>🎮 PUMPING STATION</h2>
+<button class="secondary large-button" onclick="togglePump()">🎮 PUMPING STATION</button>
 <div id="pump" class="info">READY — optional visual mode</div>
 </div>
 </section>
 
-<!-- SPLIT -->
+<!-- SPLIT SCREEN -->
 <section id="split" class="screen">
 <div class="card">
-<h2>SMART SPLIT</h2>
+<h2>✂️ SMART SPLIT</h2>
 <video id="splitVideo" controls playsinline></video>
-<div class="info">
-Current: <b id="currentTime">0:00</b> /
-<b id="totalTime">0:00</b>
+
+<div class="time-display">
+<span>Current: <b id="currentTime">0:00</b> / <b id="totalTime">0:00</b></span>
 </div>
+
 <div class="timeline" id="timeline"></div>
 
-<button onclick="splitHere()">✂ SPLIT HERE</button>
-<button class="secondary" onclick="previousClip()">◀ PREVIOUS CLIP</button>
-<button class="secondary" onclick="nextClip()">NEXT CLIP ▶</button>
+<button class="large-button" onclick="splitHere()">✂️ SPLIT HERE</button>
+<div class="button-group dual">
+<button class="secondary" onclick="previousClip()">◀ PREVIOUS</button>
+<button class="secondary" onclick="nextClip()">NEXT ▶</button>
+</div>
 
 <div id="splitClips"></div>
 </div>
 </section>
 
-<!-- NAVIGATE -->
+<!-- NAVIGATE SCREEN -->
 <section id="navigate" class="screen">
 <div class="card">
 <h2>🎯 NAVIGATE</h2>
 <div id="navInfo" class="info">No clip selected</div>
+<div class="button-group">
 <button onclick="previousClip()">◀ PREVIOUS</button>
-<button onclick="playSelected()">▶ PLAY SELECTED</button>
+<button class="large-button" onclick="playSelected()">▶ PLAY</button>
 <button onclick="nextClip()">NEXT ▶</button>
+</div>
 </div>
 </section>
 
-<!-- REEL -->
+<!-- REEL SCREEN -->
 <section id="reel" class="screen">
 <div class="card">
-<h2>REEL 9:16</h2>
-<video id="reelVideo" controls playsinline></video>
+<h2>📱 REEL 9:16</h2>
+<div class="reel-container">
+<video id="reelVideo" playsinline></video>
+</div>
+<div class="button-group dual">
 <button onclick="fitMode()">FIT</button>
 <button class="secondary" onclick="cropMode()">CROP</button>
 </div>
+</div>
 </section>
 
-<!-- TRIM -->
+<!-- TRIM SCREEN -->
 <section id="trim" class="screen">
 <div class="card">
-<h2>TRIM</h2>
+<h2>✂️ TRIM</h2>
 <video id="trimVideo" controls playsinline></video>
-<p>Start</p>
-<input id="trimStart" type="range" min="0" max="0" value="0" step=".01">
-<p>End</p>
-<input id="trimEnd" type="range" min="0" max="0" value="0" step=".01">
+
+<div class="slider-group">
+<label>START</label>
+<input id="trimStart" type="range" min="0" max="0" value="0" step="0.01">
+</div>
+
+<div class="slider-group">
+<label>END</label>
+<input id="trimEnd" type="range" min="0" max="0" value="0" step="0.01">
+</div>
+
 <div class="info">
-Start: <span id="startText">0:00</span>
-— End: <span id="endText">0:00</span>
+Start: <span id="startText">0:00</span> — End: <span id="endText">0:00</span>
 </div>
 </div>
 </section>
 
-<!-- EXPORT -->
+<!-- EXPORT SCREEN -->
 <section id="export" class="screen">
 <div class="card">
-<h2>EXPORT</h2>
-<div class="info">Browser-safe export</div>
-<button onclick="exportVideo()">EXPORT VIDEO</button>
+<h2>📤 EXPORT</h2>
+<p class="info">Export the original video from your device.</p>
+<button class="large-button" onclick="exportVideo()">📥 EXPORT VIDEO</button>
 <div id="exportStatus" class="status"></div>
 </div>
 </section>
 
+<!-- BOTTOM NAVIGATION -->
 <div class="nav">
-<button data-screen="home" onclick="showScreen('home')">HOME</button>
+<button class="active" data-screen="home" onclick="showScreen('home')">HOME</button>
 <button data-screen="split" onclick="showScreen('split')">SPLIT</button>
 <button data-screen="navigate" onclick="showScreen('navigate')">NAV</button>
 <button data-screen="reel" onclick="showScreen('reel')">REEL</button>
@@ -163,297 +518,355 @@ Start: <span id="startText">0:00</span>
 </div>
 
 <script>
-let video=document.getElementById("mainVideo");
-let splitVideo=document.getElementById("splitVideo");
-let reelVideo=document.getElementById("reelVideo");
-let trimVideo=document.getElementById("trimVideo");
-let objectURL=null;
-let duration=0;
-let splitPoints=[];
-let clips=[];
-let selectedClip=0;
+// ===== DOM ELEMENTS =====
+const video = document.getElementById('mainVideo');
+const splitVideo = document.getElementById('splitVideo');
+const reelVideo = document.getElementById('reelVideo');
+const trimVideo = document.getElementById('trimVideo');
 
-const $=id=>document.getElementById(id);
+// ===== STATE =====
+let objectURL = null;
+let duration = 0;
+let splitPoints = [];
+let clips = [];
+let selectedClip = 0;
+let pumpActive = false;
 
-function time(t){
- if(!isFinite(t))return"0:00";
- let m=Math.floor(t/60),s=Math.floor(t%60);
- return m+":"+String(s).padStart(2,"0");
+// ===== UTILITY =====
+const $ = id => document.getElementById(id);
+
+function time(t) {
+  if (!isFinite(t)) return '0:00';
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  return m + ':' + String(s).padStart(2, '0');
 }
 
-$("file").addEventListener("change",e=>{
- const f=e.target.files[0];
- if(!f)return;
+// ===== VIDEO UPLOAD =====
+$('file').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
 
- if(objectURL)URL.revokeObjectURL(objectURL);
- objectURL=URL.createObjectURL(f);
+  // Revoke old URL
+  if (objectURL) URL.revokeObjectURL(objectURL);
 
- video.src=objectURL;
- splitVideo.src=objectURL;
- reelVideo.src=objectURL;
- trimVideo.src=objectURL;
+  objectURL = URL.createObjectURL(f);
 
- $("filename").textContent=f.name;
- $("status").textContent="Loading video…";
+  video.src = objectURL;
+  splitVideo.src = objectURL;
+  reelVideo.src = objectURL;
+  trimVideo.src = objectURL;
 
- video.load();
- splitVideo.load();
- reelVideo.load();
- trimVideo.load();
+  $('filename').textContent = f.name;
+  $('status').textContent = 'Loading video…';
 
- video.onloadedmetadata=()=>{
-   duration=video.duration;
-   $("status").textContent="Video ready ✓";
-   setupTrim();
-   rebuildClips();
- };
+  // Load video in all elements
+  video.load();
+  splitVideo.load();
+  reelVideo.load();
+  trimVideo.load();
+
+  // Once metadata is loaded
+  video.onloadedmetadata = () => {
+    duration = video.duration;
+    $('status').textContent = '✓ Video ready';
+    $('status').classList.remove('error');
+    $('status').classList.add('success');
+    setupTrim();
+    rebuildClips();
+  };
+
+  video.onerror = () => {
+    $('status').textContent = 'Video format not supported by this browser.';
+    $('status').classList.add('error');
+  };
 });
 
-function setupTrim(){
- $("trimStart").max=duration;
- $("trimEnd").max=duration;
- $("trimEnd").value=duration;
- updateTrim();
+// ===== TRIM SETUP =====
+function setupTrim() {
+  $('trimStart').max = duration;
+  $('trimEnd').max = duration;
+  $('trimEnd').value = duration;
+  updateTrim();
 }
 
-$("trimStart").oninput=()=>{
- if(+$("trimStart").value>+$("trimEnd").value)
-   $("trimStart").value=$("trimEnd").value;
- updateTrim();
-};
+$('trimStart').addEventListener('input', () => {
+  if (+$('trimStart').value > +$('trimEnd').value) {
+    $('trimStart').value = $('trimEnd').value;
+  }
+  updateTrim();
+});
 
-$("trimEnd").oninput=()=>{
- if(+$("trimEnd").value<+$("trimStart").value)
-   $("trimEnd").value=$("trimStart").value;
- updateTrim();
-};
+$('trimEnd').addEventListener('input', () => {
+  if (+$('trimEnd').value < +$('trimStart').value) {
+    $('trimEnd').value = $('trimStart').value;
+  }
+  updateTrim();
+});
 
-function updateTrim(){
- $("startText").textContent=time(+$("trimStart").value);
- $("endText").textContent=time(+$("trimEnd").value);
+function updateTrim() {
+  $('startText').textContent = time(+$('trimStart').value);
+  $('endText').textContent = time(+$('trimEnd').value);
 }
 
-$("realSlider").oninput=e=>{
- let v=+e.target.value;
- $("realValue").textContent=v+"%";
-};
+// ===== REAL / MEI SLIDER =====
+$('realSlider').addEventListener('input', e => {
+  const v = +e.target.value;
+  $('realValue').textContent = v + '%';
+});
 
-$("balance").oninput=e=>{
- let v=+e.target.value;
- $("realBal").textContent="REAL: "+(100-v)+"%";
- $("meiBal").textContent="MEI: "+v+"%";
-};
+// ===== BALANCE SLIDER =====
+$('balance').addEventListener('input', e => {
+  const v = +e.target.value;
+  $('realBal').textContent = 'REAL: ' + (100 - v) + '%';
+  $('meiBal').textContent = 'MEI: ' + v + '%';
+});
 
-function splitHere(){
- if(!duration){
-   $("status").textContent="Upload a video first.";
-   return;
- }
+// ===== SMART SPLIT =====
+function splitHere() {
+  if (!duration) {
+    $('status').textContent = 'Upload a video first.';
+    $('status').classList.add('error');
+    return;
+  }
 
- let t=video.currentTime;
+  const t = video.currentTime;
 
- if(splitPoints.some(x=>Math.abs(x-t)<.05))return;
+  // Ignore duplicate points
+  if (splitPoints.some(x => Math.abs(x - t) < 0.05)) return;
 
- if(t<=0||t>=duration){
-   $("status").textContent="Move the playhead inside the video.";
-   return;
- }
+  // Ignore edges
+  if (t <= 0 || t >= duration) {
+    $('status').textContent = 'Move the playhead inside the video.';
+    $('status').classList.add('error');
+    return;
+  }
 
- splitPoints.push(t);
- splitPoints.sort((a,b)=>a-b);
- rebuildClips();
- renderClips();
-}
-
-function rebuildClips(){
- let p=[0,...splitPoints,duration];
- clips=[];
-
- for(let i=0;i<p.length-1;i++){
-   clips.push({start:p[i],end:p[i+1]});
- }
-
- renderClips();
-}
-
-function renderClips(){
- let html="";
-
- clips.forEach((c,i)=>{
-  html+=`
-  <div class="clip ${i===selectedClip?"selected":""}">
-  <b>CLIP ${i+1}</b>
-  <div>${time(c.start)} → ${time(c.end)}</div>
-  <button onclick="selectClip(${i})">SELECT</button>
-  <button class="secondary" onclick="deleteClip(${i})">DELETE</button>
-  </div>`;
- });
-
- $("clipList").innerHTML=html;
- $("splitClips").innerHTML=html;
-
- updateNav();
- drawTimeline();
-}
-
-function selectClip(i){
- if(i<0||i>=clips.length)return;
- selectedClip=i;
- let c=clips[i];
-
- video.currentTime=c.start;
- splitVideo.currentTime=c.start;
-
- renderClips();
-}
-
-function deleteClip(i){
- if(i<0||i>=clips.length)return;
- if(clips.length<=1)return;
-
- let boundary=clips[i].end;
-
- if(i===clips.length-1) boundary=clips[i].start;
-
- splitPoints=splitPoints.filter(x=>Math.abs(x-boundary)>.05);
-
- if(selectedClip>=clips.length-1)
-   selectedClip=Math.max(0,clips.length-2);
-
- rebuildClips();
-}
-
-function previousClip(){
- if(selectedClip>0){
-   selectedClip--;
-   selectClip(selectedClip);
- }
-}
-
-function nextClip(){
- if(selectedClip<clips.length-1){
-   selectedClip++;
-   selectClip(selectedClip);
- }
-}
-
-function playSelected(){
- if(!clips.length)return;
- let c=clips[selectedClip];
-
- video.currentTime=c.start;
- video.play();
-
- video.ontimeupdate=()=>{
-   if(video.currentTime>=c.end){
-     video.pause();
-     video.ontimeupdate=null;
-   }
- };
-}
-
-function resetSplits(){
- splitPoints=[];
- selectedClip=0;
- rebuildClips();
-}
-
-function updateNav(){
- if(!clips.length){
-  $("navInfo").textContent="No clip selected";
-  return;
- }
-
- let c=clips[selectedClip];
- $("navInfo").innerHTML=
- `CLIP ${selectedClip+1} / ${clips.length}<br>
- ${time(c.start)} → ${time(c.end)}`;
-}
-
-function drawTimeline(){
- let tl=$("timeline");
- if(!tl)return;
-
- tl.innerHTML="";
-
- if(!duration)return;
-
- splitPoints.forEach(p=>{
-  let m=document.createElement("div");
-  m.className="marker";
-  m.style.left=(p/duration*100)+"%";
-  tl.appendChild(m);
- });
-}
-
-splitVideo.addEventListener("timeupdate",()=>{
- $("currentTime").textContent=time(splitVideo.currentTime);
- $("totalTime").textContent=time(splitVideo.duration);
-
- if(clips.length){
-  let c=clips[selectedClip];
-  if(splitVideo.currentTime<c.start||splitVideo.currentTime>c.end)
-    selectedClip=clips.findIndex(x=>
-      splitVideo.currentTime>=x.start&&splitVideo.currentTime<=x.end);
+  splitPoints.push(t);
+  splitPoints.sort((a, b) => a - b);
+  rebuildClips();
   renderClips();
- }
+}
+
+function rebuildClips() {
+  const p = [0, ...splitPoints, duration];
+  clips = [];
+
+  for (let i = 0; i < p.length - 1; i++) {
+    clips.push({ start: p[i], end: p[i + 1] });
+  }
+
+  renderClips();
+}
+
+function renderClips() {
+  let html = '';
+
+  clips.forEach((c, i) => {
+    html += `
+    <div class="clip ${i === selectedClip ? 'selected' : ''}">
+    <b>CLIP ${i + 1}</b>
+    <div>${time(c.start)} → ${time(c.end)}</div>
+    <div class="clip-buttons">
+    <button onclick="selectClip(${i})">SELECT</button>
+    <button class="secondary" onclick="deleteClip(${i})">DELETE</button>
+    </div>
+    </div>`;
+  });
+
+  $('clipList').innerHTML = html;
+  $('splitClips').innerHTML = html;
+
+  updateNav();
+  drawTimeline();
+}
+
+function selectClip(i) {
+  if (i < 0 || i >= clips.length) return;
+  selectedClip = i;
+  const c = clips[i];
+
+  video.currentTime = c.start;
+  splitVideo.currentTime = c.start;
+
+  renderClips();
+}
+
+function deleteClip(i) {
+  if (i < 0 || i >= clips.length) return;
+  if (clips.length <= 1) return;
+
+  let boundary = clips[i].end;
+  if (i === clips.length - 1) boundary = clips[i].start;
+
+  splitPoints = splitPoints.filter(x => Math.abs(x - boundary) > 0.05);
+
+  if (selectedClip >= clips.length - 1) {
+    selectedClip = Math.max(0, clips.length - 2);
+  }
+
+  rebuildClips();
+}
+
+function previousClip() {
+  if (selectedClip > 0) {
+    selectedClip--;
+    selectClip(selectedClip);
+  }
+}
+
+function nextClip() {
+  if (selectedClip < clips.length - 1) {
+    selectedClip++;
+    selectClip(selectedClip);
+  }
+}
+
+function playSelected() {
+  if (!clips.length) return;
+  const c = clips[selectedClip];
+
+  video.currentTime = c.start;
+  video.play();
+
+  video.ontimeupdate = () => {
+    if (video.currentTime >= c.end) {
+      video.pause();
+      video.ontimeupdate = null;
+    }
+  };
+}
+
+function resetSplits() {
+  splitPoints = [];
+  selectedClip = 0;
+  rebuildClips();
+}
+
+function updateNav() {
+  if (!clips.length) {
+    $('navInfo').textContent = 'No clip selected';
+    return;
+  }
+
+  const c = clips[selectedClip];
+  $('navInfo').innerHTML = `CLIP ${selectedClip + 1} / ${clips.length}<br>${time(c.start)} → ${time(c.end)}`;
+}
+
+function drawTimeline() {
+  const tl = $('timeline');
+  if (!tl) return;
+
+  tl.innerHTML = '';
+
+  if (!duration) return;
+
+  splitPoints.forEach(p => {
+    const m = document.createElement('div');
+    m.className = 'marker';
+    m.style.left = (p / duration * 100) + '%';
+    tl.appendChild(m);
+  });
+}
+
+// ===== SPLIT VIDEO TIME UPDATE =====
+splitVideo.addEventListener('timeupdate', () => {
+  $('currentTime').textContent = time(splitVideo.currentTime);
+  $('totalTime').textContent = time(splitVideo.duration);
+
+  if (clips.length) {
+    const c = clips[selectedClip];
+    if (splitVideo.currentTime < c.start || splitVideo.currentTime > c.end) {
+      const newClip = clips.findIndex(x =>
+        splitVideo.currentTime >= x.start && splitVideo.currentTime <= x.end
+      );
+      if (newClip !== -1) {
+        selectedClip = newClip;
+        renderClips();
+      }
+    }
+  }
+
+  // Update playhead marker
+  if (duration) {
+    const percent = (splitVideo.currentTime / duration) * 100;
+    const timeline = $('timeline');
+    let playhead = timeline.querySelector('.playhead');
+    if (!playhead) {
+      playhead = document.createElement('div');
+      playhead.className = 'playhead';
+      timeline.appendChild(playhead);
+    }
+    playhead.style.left = percent + '%';
+  }
 });
 
-function showScreen(id){
- document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
- $(id).classList.add("active");
-
- document.querySelectorAll(".nav button").forEach(b=>{
-  b.classList.toggle("active",b.dataset.screen===id);
- });
-
- if(objectURL){
-  if(id==="reel")reelVideo.currentTime=video.currentTime;
-  if(id==="trim")trimVideo.currentTime=video.currentTime;
- }
-}
-
-function fitMode(){
- reelVideo.style.objectFit="contain";
-}
-
-function cropMode(){
- reelVideo.style.objectFit="cover";
-}
-
-function togglePump(){
- let p=$("pump");
- p.textContent=p.textContent.includes("READY")
- ?"🎮 PUMPING STATION ACTIVE — visual experiment mode"
- :"READY — optional visual mode";
-}
-
-function exportVideo(){
- if(!objectURL){
-  $("exportStatus").textContent="Upload a video first.";
-  return;
- }
-
- /*
-  Browser-safe fallback:
-  The original local video is downloaded without modifying it.
-  True MP4 re-encoding requires a browser encoder/library.
- */
- let a=document.createElement("a");
- a.href=objectURL;
- a.download="Live-Synthist-Video";
- document.body.appendChild(a);
- a.click();
- a.remove();
-
- $("exportStatus").textContent=
- "Export started. Original video preserved.";
-}
-
-video.addEventListener("timeupdate",()=>{
- if(duration)drawTimeline();
+// ===== MAIN VIDEO TIME UPDATE (for timeline) =====
+video.addEventListener('timeupdate', () => {
+  if (duration) drawTimeline();
 });
 
+// ===== SCREEN NAVIGATION =====
+function showScreen(id) {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  $(id).classList.add('active');
+
+  // Update nav buttons
+  document.querySelectorAll('.nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === id);
+  });
+
+  // Sync video position when switching screens
+  if (objectURL) {
+    if (id === 'split') splitVideo.currentTime = video.currentTime;
+    if (id === 'reel') reelVideo.currentTime = video.currentTime;
+    if (id === 'trim') trimVideo.currentTime = video.currentTime;
+  }
+}
+
+// ===== REEL MODES =====
+function fitMode() {
+  reelVideo.style.objectFit = 'contain';
+}
+
+function cropMode() {
+  reelVideo.style.objectFit = 'cover';
+}
+
+// ===== PUMPING STATION =====
+function togglePump() {
+  pumpActive = !pumpActive;
+  const p = $('pump');
+  if (pumpActive) {
+    p.textContent = '🎮 PUMPING STATION ACTIVE — visual experiment mode';
+  } else {
+    p.textContent = 'READY — optional visual mode';
+  }
+}
+
+// ===== EXPORT =====
+function exportVideo() {
+  if (!objectURL) {
+    $('exportStatus').textContent = 'Upload a video first.';
+    $('exportStatus').classList.add('error');
+    return;
+  }
+
+  // Browser-safe fallback: download original
+  const a = document.createElement('a');
+  a.href = objectURL;
+  a.download = 'Live-Synthist-Video.mp4';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  $('exportStatus').textContent = '✓ Export started. Original video preserved.';
+  $('exportStatus').classList.remove('error');
+  $('exportStatus').classList.add('success');
+}
+
+// ===== INITIALIZE =====
 rebuildClips();
 </script>
 </body>
