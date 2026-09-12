@@ -906,3 +906,405 @@ document.addEventListener(
 
 </body>
    </html>
+You are continuing my EXISTING GitHub Pages project.
+
+Repository: bvn-factory
+Branch: main
+File: index.html
+App: Live Synthist
+
+IMPORTANT:
+Do NOT create a new project.
+Do NOT replace the existing application.
+Do NOT remove any existing functionality.
+Modify the EXISTING index.html only.
+
+CURRENT WORKING FEATURES — MUST REMAIN WORKING:
+- Live Synthist title
+- Play / Stop
+- Frequency slider
+- Frequency display
+- Volume slider
+- Volume display
+- Waveform selector
+- Web Audio synthesis
+- Touch Keyboard
+- Keyboard controls
+- Live Waveform visualizer
+- Existing dark UI
+- Android Chrome compatibility
+
+The Live Waveform is now WORKING correctly.
+DO NOT break or replace the existing analyser/visualizer system.
+
+==================================================
+NEW FEATURE: VIDEO COMPOSER
+==================================================
+
+Add a new section below the existing Live Synthist controls:
+
+🎬 VIDEO COMPOSER
+
+The purpose is to create a simple Reel/Real balanced video editor.
+
+==================================================
+1. VIDEO UPLOAD
+==================================================
+
+Add:
+
+<input type="file">
+
+Accept:
+- video/mp4
+- video/webm
+- video/quicktime
+- video/*
+
+After selecting a video:
+- show the video preview
+- use an HTML5 <video> element
+- allow play/pause
+- show video duration when available
+- do not upload the video to an external server
+- keep processing local in the browser
+
+==================================================
+2. REEL / REAL BALANCE CONTROL
+==================================================
+
+Create a large, clearly visible control:
+
+REEL ←───────────────→ REAL
+
+Range:
+1% to 100%
+
+Default:
+50%
+
+Display:
+
+Reel: 50%
+Real: 50%
+
+The values must always balance to 100%.
+
+Examples:
+
+1%  = Reel 1% / Real 99%
+25% = Reel 25% / Real 75%
+50% = Reel 50% / Real 50%
+75% = Reel 75% / Real 25%
+100% = Reel 100% / Real 0%
+
+Use a range slider with:
+min="1"
+max="100"
+value="50"
+
+The opposite value must automatically be:
+
+realPercent = 100 - reelPercent
+
+==================================================
+3. MINUS / PLUS CONTROLS
+==================================================
+
+Add:
+
+[ − ]   Reel / Real Balance   [ + ]
+
+Minus:
+- decrease Reel percentage by 1
+- increase Real percentage by 1
+- minimum Reel = 1
+
+Plus:
+- increase Reel percentage by 1
+- decrease Real percentage by 1
+- maximum Reel = 100
+
+The slider and −/+ buttons must remain synchronized.
+
+Do NOT allow values outside 1–100.
+
+==================================================
+4. BALANCE DISPLAY
+==================================================
+
+Show a visual balance indicator:
+
+REEL
+XX%
+
+──────────────⚖──────────────
+
+YY%
+REAL
+
+Also show:
+
+Reel Influence: XX%
+Real Preservation: YY%
+
+The terminology must make clear that this is an EDITING/COMPOSITION
+balance, NOT an AI truth detector.
+
+Do NOT claim that the system can determine whether a video is
+objectively real or fake.
+
+==================================================
+5. REEL MODE BEHAVIOR
+==================================================
+
+The Reel percentage controls creative enhancement.
+
+At low Reel percentage:
+- minimal visual enhancement
+- minimal effect
+- preserve original appearance
+
+At high Reel percentage:
+- stronger creative treatment
+- stronger cinematic styling
+- stronger visual enhancement
+
+Use only browser-native CSS/Canvas/video capabilities.
+
+Do NOT add external libraries.
+
+==================================================
+6. REAL MODE BEHAVIOR
+==================================================
+
+The Real percentage controls preservation of the original video.
+
+At high Real percentage:
+- preserve original video appearance
+- preserve original audio
+- minimize visual effects
+
+At low Real percentage:
+- allow more creative treatment
+
+IMPORTANT:
+Do not destroy the original source video.
+
+The original video must always remain available for preview.
+
+==================================================
+7. LIVE PREVIEW
+==================================================
+
+Add:
+
+🎬 Composed Preview
+
+The preview should update when the Reel/Real slider changes.
+
+For the first implementation, use lightweight browser-native effects.
+
+For example:
+
+Real 100%:
+- original video appearance
+
+Reel 50%:
+- moderate enhancement
+
+Reel 100%:
+- stronger creative enhancement
+
+Do NOT make the preview computationally heavy on Android.
+
+Use CSS filters/opacity/transform where practical.
+
+Do NOT continuously create new video elements.
+
+==================================================
+8. SYNTH AUDIO INTEGRATION
+==================================================
+
+Keep the EXISTING synthesizer working.
+
+Add a simple option:
+
+☐ Include Synth Audio
+
+When enabled:
+- use the existing synthesizer audio system
+- do not create unnecessary AudioContexts
+- do not create a second competing synthesizer
+- do not break the existing Live Waveform
+
+If browser security restrictions prevent direct final video
+audio export, clearly handle that limitation instead of pretending
+the export succeeded.
+
+==================================================
+9. VIDEO TIMELINE
+==================================================
+
+Add a simple timeline display:
+
+00:00 ─────────────── XX:XX
+
+Show current video time and duration.
+
+Add:
+
+▶ Play
+⏸ Pause
+↺ Restart
+
+Use the existing video element.
+
+==================================================
+10. EXPORT
+==================================================
+
+Add:
+
+💾 Export Balanced Video
+
+For the first version, implement the safest browser-native
+export possible.
+
+Prefer:
+- Canvas
+- MediaRecorder
+- captured video frames
+- browser-native APIs
+
+Do NOT add:
+- ffmpeg.js
+- React
+- npm
+- build tools
+- external CDN libraries
+- server-side processing
+
+If the browser cannot export a particular combination of
+video + original audio + synthesized audio, show a clear
+message rather than producing a fake download.
+
+The UI must never say "Export successful" unless an actual
+Blob/file was generated.
+
+==================================================
+11. MOBILE DESIGN
+==================================================
+
+The new Video Composer must work on Android Chrome.
+
+Requirements:
+- large touch targets
+- responsive layout
+- no horizontal overflow
+- slider easy to operate
+- −/+ buttons easy to press
+- video preview responsive
+- dark UI matching Live Synthist
+- do not interfere with Touch Keyboard
+
+==================================================
+12. PERFORMANCE
+==================================================
+
+IMPORTANT:
+
+Do not create:
+- multiple animation loops
+- multiple AudioContexts
+- multiple analysers
+- multiple video elements
+- duplicate event listeners
+
+The existing waveform animation loop must remain intact.
+
+Clean up MediaRecorder resources after export.
+
+Stop/release temporary object URLs when no longer required.
+
+==================================================
+13. EXISTING CODE SAFETY
+==================================================
+
+Before modifying:
+
+1. Inspect the complete existing index.html.
+2. Preserve all working synthesizer code.
+3. Preserve the existing Live Waveform implementation.
+4. Add the Video Composer as an additional module.
+5. Do not replace the entire application with an unrelated app.
+6. Do not remove Touch Keyboard.
+7. Do not change the app name.
+8. Do not change repository structure.
+
+==================================================
+14. VALIDATION
+==================================================
+
+Before finishing, verify:
+
+- complete valid HTML document
+- no missing closing tags
+- no JavaScript syntax errors
+- video upload works
+- video preview works
+- Reel/Real slider works
+- −/+ buttons work
+- Reel + Real always equals 100
+- preview updates
+- existing synthesizer still produces sound
+- existing waveform still moves
+- existing Touch Keyboard still works
+- mobile layout works
+- no external libraries
+- no duplicate visualizer
+- no duplicate AudioContext
+- no uncontrolled requestAnimationFrame loops
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+The existing app should become:
+
+LIVE SYNTHIST
+      +
+VIDEO COMPOSER
+
+with:
+
+🎬 Upload Video
+
+REEL ←────────⚖────────→ REAL
+
+Reel: 50%
+Real: 50%
+
+[ − ]                 [ + ]
+
+🎥 Original Preview
+
+🎬 Composed Preview
+
+▶ Play   ⏸ Pause   ↺ Restart
+
+☐ Include Synth Audio
+
+💾 Export Balanced Video
+
+The Reel/Real control is an editing/composition balance only.
+It must NOT be presented as an objective detector of whether
+video content is real or fake.
+
+IMPORTANT OUTPUT:
+After making the modification, provide the COMPLETE FINAL
+index.html.
+
+Do not provide a partial snippet.
+Do not omit existing working sections.
+Do not invent a new unrelated application.
