@@ -1,166 +1,98 @@
-FIX THE CURRENT PROJECT — DO NOT DISPLAY THIS PROMPT AS WEBPAGE TEXT.
+URGENT FIX — REPLACE THE CURRENT WEBSITE CODE
 
-The current GitHub Pages website is incorrectly showing the instructions/prompt as plain text on the screen. Replace that behavior with a real working Live Synthist web app.
+The current GitHub Pages site is displaying the prompt/instructions as plain text.
 
-IMPORTANT:
-1. Do NOT show these instructions anywhere in the webpage.
-2. Do NOT render the prompt as text.
-3. Do NOT create a documentation page instead of the app.
-4. Modify the actual project files so GitHub Pages loads the application.
-5. Keep the existing project structure where possible.
-6. If the current index.html is wrong, replace its contents with the actual app.
-7. The final index.html must contain the working application UI and JavaScript.
+DO NOT add another prompt.
+DO NOT append text.
+DO NOT create a text/document page.
 
-APP NAME:
+DELETE the current incorrect index.html content and REPLACE it with a real working Live Synthist application.
+
+The root index.html must contain actual HTML, CSS and JavaScript for the application.
+
+BUILD THIS:
+
+APP TITLE:
 Live Synthist
 
-PURPOSE:
-Create a simple mobile-friendly video editor/analysis interface.
-
-MAIN SCREEN:
-
-HEADER:
-Live Synthist
-
-SECTION 1 — VIDEO
-- Show a video upload button.
-- User can select a video from Android/local storage.
-- After selecting a video, immediately show it in a video player.
-- Show video duration.
-- Show current playback time.
-
-SECTION 2 — REAL / MEI
-Create one large horizontal percentage slider.
-
-Range:
-0% to 100%
-
-Display:
-0% = REAL
-100% = MEI
-
-Show the current value prominently:
-REAL 0%
-REAL 25%
-REAL 50%
-REAL 75%
-MEI 100%
-
-The value must update live when the slider moves.
-
-IMPORTANT:
-REAL/MEI is only a user-controlled editing scale.
-Do NOT claim that the app scientifically detects truth, lies, or authenticity.
-
-SECTION 3 — BALANCE
-Add a balance control.
-
-Show:
-REAL: XX%
-MEI: XX%
-
-The two values must always add up to 100%.
-
-Example:
-REAL 70% / MEI 30%
-REAL 50% / MEI 50%
-REAL 20% / MEI 80%
-
-Update the display immediately when the balance slider changes.
-
-SECTION 4 — REEL
-Add a Reel 9:16 preview mode.
-
-The video preview should appear in a vertical 9:16 container.
-
-Do not stretch or distort the video.
-
-Provide:
-FIT
-CROP
-
-buttons if possible.
-
-SECTION 5 — VIDEO CONTROLS
-Add working:
-- Play
-- Pause
+SCREEN:
+- Dark mobile-friendly interface
+- Header: Live Synthist
+- Upload Video button
+- HTML5 video preview
+- Play / Pause
 - Seek bar
-- Volume
-- Mute
-- Current time
-- Total duration
+- Volume / Mute
+- Current time / total duration
 
-SECTION 6 — SIMPLE TRIM
-Add:
-Start time
-End time
+REAL / MEI:
+- One slider from 0% to 100%
+- 0% = REAL
+- 100% = MEI
+- Show the selected percentage live
+- Show REAL and MEI labels
 
-Allow the user to change the beginning and ending positions.
+BALANCE:
+- Slider from 0% to 100%
+- Display:
+  REAL: XX%
+  MEI: XX%
+- The two values must always total 100%
 
-Do not pretend that trimming/export has happened if the browser cannot actually render it.
+REEL:
+- Add a 9:16 vertical video preview
+- Do not stretch the video
+- Provide FIT and CROP controls
 
-SECTION 7 — EXPORT
-Add a large:
-EXPORT VIDEO
+TRIM:
+- Start time control
+- End time control
+- Update the selected trim values
 
-button.
+EXPORT:
+- Add an EXPORT VIDEO button
+- Never fake a successful export
+- If real browser export is not possible, clearly display:
+  "Video export is not supported by this browser yet."
 
-If browser-side video export is technically supported, perform it.
+IMPORTANT TECHNICAL RULES:
 
-If the browser cannot perform real video rendering/export, show:
-"Video export is not supported by this browser yet."
+1. Use only browser HTML/CSS/JavaScript.
+2. No backend.
+3. No login.
+4. No payment.
+5. No API key.
+6. No external API.
+7. Uploaded video must stay local in the browser.
+8. Do not show this instruction text anywhere in the application.
+9. Do not put the prompt into a <p>, <div>, <pre>, textarea, or any visible HTML element.
+10. Remove any existing code that displays the prompt.
+11. Make index.html the actual application entry point.
+12. Make sure GitHub Pages loads index.html correctly.
+13. Check for JavaScript errors.
+14. The first screen must show the Live Synthist UI, NOT the prompt.
 
-Do NOT show a fake download or fake success message.
+FINAL TEST:
 
-DESIGN:
-- Dark modern UI.
-- Mobile-first.
-- Optimized for Android phone screen.
-- Large touch-friendly controls.
-- Clear labels.
-- No unnecessary menus.
-- No login.
-- No payment.
-- No database.
-- No backend.
-- No external API.
-- No API key.
-- No unnecessary dependencies.
+Open the GitHub Pages URL.
 
-TECHNICAL REQUIREMENTS:
-- Use plain HTML, CSS and JavaScript unless the existing project requires another framework.
-- Everything must run directly in the browser.
-- Use a local object URL for the uploaded video.
-- Do not upload the user's video to a server.
-- Do not require an internet connection for basic video preview.
-- Make sure JavaScript executes correctly.
-- Make sure there are no console errors.
-- Make sure the page is not displaying source code or this prompt as visible text.
+Expected result:
+Live Synthist
+↓
+Upload Video
+↓
+Video Preview
+↓
+REAL / MEI slider
+↓
+BALANCE slider
+↓
+REEL 9:16 preview
+↓
+Trim controls
+↓
+Export Video
 
-MOST IMPORTANT:
-The browser page must visually show the actual Live Synthist application.
+If the website still shows the prompt after this change, the implementation is NOT complete.
 
-It must NOT show:
-"Create a simple working web app..."
-or any other part of this prompt.
-
-FINAL CHECK BEFORE FINISHING:
-Test this exact flow:
-
-1. Open website.
-2. Live Synthist UI appears.
-3. Tap Upload Video.
-4. Select a video.
-5. Video appears.
-6. Play/Pause works.
-7. REAL/MEI slider works from 0–100%.
-8. Balance values update.
-9. Reel 9:16 preview works.
-10. Trim controls work as far as browser capabilities allow.
-11. Export button gives a truthful result.
-12. Refreshing the page still loads the application, not the prompt.
-
-IMPORTANT FINAL INSTRUCTION:
-Do not just save these instructions as text.
-IMPLEMENT THE APPLICATION IN THE PROJECT FILES NOW.
+IMPLEMENT THE CODE NOW.
