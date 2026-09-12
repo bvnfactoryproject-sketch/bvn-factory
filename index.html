@@ -1,90 +1,166 @@
-Create a simple working web app called “Live Synthist”.
+FIX THE CURRENT PROJECT — DO NOT DISPLAY THIS PROMPT AS WEBPAGE TEXT.
+
+The current GitHub Pages website is incorrectly showing the instructions/prompt as plain text on the screen. Replace that behavior with a real working Live Synthist web app.
 
 IMPORTANT:
-- Build a clean, functional MVP.
-- Do not add unnecessary features.
-- Do not use external APIs.
-- Do not require login, payment, database, or backend.
-- Everything must work directly in the browser.
-- Make the UI mobile-friendly.
+1. Do NOT show these instructions anywhere in the webpage.
+2. Do NOT render the prompt as text.
+3. Do NOT create a documentation page instead of the app.
+4. Modify the actual project files so GitHub Pages loads the application.
+5. Keep the existing project structure where possible.
+6. If the current index.html is wrong, replace its contents with the actual app.
+7. The final index.html must contain the working application UI and JavaScript.
 
-CORE IDEA:
-The app is a video analysis and editing interface.
+APP NAME:
+Live Synthist
 
-1. VIDEO INPUT
-- Add a large “Upload Video” button.
-- Allow the user to select a local video file.
-- Show the selected video in a video player.
-- Show video duration and current playback time.
+PURPOSE:
+Create a simple mobile-friendly video editor/analysis interface.
 
-2. REAL vs MEI CONTROL
-- Add a percentage control from 0% to 100%.
-- 0% = fully REAL.
-- 100% = fully MEI.
-- Allow the user to stop/select any percentage between 0% and 100%.
-- Show the current percentage clearly.
-- Add “REAL” and “MEI” labels at the two ends.
+MAIN SCREEN:
 
-3. BALANCED VIDEO
-- Add a “Balance” control.
-- The user can choose how much REAL and MEI content should be used.
-- Display the selected balance visually.
-- Do not claim that the app can scientifically detect truth or lies.
-- This is only a user-controlled editing/analysis scale.
+HEADER:
+Live Synthist
 
-4. REEL FORMAT
-- Add a Reel/Vertical format option.
-- Use 9:16 preview.
-- Keep the original video aspect ratio without distortion.
-- Add simple crop/fit options if possible.
+SECTION 1 — VIDEO
+- Show a video upload button.
+- User can select a video from Android/local storage.
+- After selecting a video, immediately show it in a video player.
+- Show video duration.
+- Show current playback time.
 
-5. PLAYBACK
-- Play/Pause button.
-- Seek bar.
-- Volume control.
-- Current time / total duration.
-- Percentage indicator should update while the video is being edited.
+SECTION 2 — REAL / MEI
+Create one large horizontal percentage slider.
 
-6. SIMPLE EDITING
-Provide basic controls:
-- Trim start
-- Trim end
-- REAL/MEI percentage
-- Balance
-- Reel 9:16 preview
+Range:
+0% to 100%
 
-7. EXPORT
-- Add a clearly visible “Export Video” button.
-- Export the edited result as a browser-supported video format when technically possible.
-- If full video rendering/export is not supported by the browser, show a clear message instead of pretending the export succeeded.
+Display:
+0% = REAL
+100% = MEI
 
-8. UI
-- Dark modern interface.
-- Large buttons suitable for Android mobile screens.
-- Keep the interface simple.
-- Main sections:
-  VIDEO
-  REAL / MEI
-  BALANCE
-  REEL 9:16
-  EXPORT
+Show the current value prominently:
+REAL 0%
+REAL 25%
+REAL 50%
+REAL 75%
+MEI 100%
 
-9. ERROR HANDLING
-- If no video is selected, show “Please upload a video first.”
-- Never show fake success messages.
-- Never create fake download buttons.
-- Never leave buttons non-functional without explaining why.
+The value must update live when the slider moves.
 
-10. CODE QUALITY
-- Produce a complete working project.
-- Make sure all required files are created.
-- Make sure the app starts without errors.
-- Do not leave placeholder code.
-- Test the main user flow:
-  Upload Video → Preview → Adjust REAL/MEI → Balance → Reel Preview → Export.
+IMPORTANT:
+REAL/MEI is only a user-controlled editing scale.
+Do NOT claim that the app scientifically detects truth, lies, or authenticity.
 
-FINAL REQUIREMENT:
-Create the simplest reliable working version first.
-Do not redesign the concept.
-Do not add unrelated AI features.
-Do not change the REAL/MEI percentage concept.
+SECTION 3 — BALANCE
+Add a balance control.
+
+Show:
+REAL: XX%
+MEI: XX%
+
+The two values must always add up to 100%.
+
+Example:
+REAL 70% / MEI 30%
+REAL 50% / MEI 50%
+REAL 20% / MEI 80%
+
+Update the display immediately when the balance slider changes.
+
+SECTION 4 — REEL
+Add a Reel 9:16 preview mode.
+
+The video preview should appear in a vertical 9:16 container.
+
+Do not stretch or distort the video.
+
+Provide:
+FIT
+CROP
+
+buttons if possible.
+
+SECTION 5 — VIDEO CONTROLS
+Add working:
+- Play
+- Pause
+- Seek bar
+- Volume
+- Mute
+- Current time
+- Total duration
+
+SECTION 6 — SIMPLE TRIM
+Add:
+Start time
+End time
+
+Allow the user to change the beginning and ending positions.
+
+Do not pretend that trimming/export has happened if the browser cannot actually render it.
+
+SECTION 7 — EXPORT
+Add a large:
+EXPORT VIDEO
+
+button.
+
+If browser-side video export is technically supported, perform it.
+
+If the browser cannot perform real video rendering/export, show:
+"Video export is not supported by this browser yet."
+
+Do NOT show a fake download or fake success message.
+
+DESIGN:
+- Dark modern UI.
+- Mobile-first.
+- Optimized for Android phone screen.
+- Large touch-friendly controls.
+- Clear labels.
+- No unnecessary menus.
+- No login.
+- No payment.
+- No database.
+- No backend.
+- No external API.
+- No API key.
+- No unnecessary dependencies.
+
+TECHNICAL REQUIREMENTS:
+- Use plain HTML, CSS and JavaScript unless the existing project requires another framework.
+- Everything must run directly in the browser.
+- Use a local object URL for the uploaded video.
+- Do not upload the user's video to a server.
+- Do not require an internet connection for basic video preview.
+- Make sure JavaScript executes correctly.
+- Make sure there are no console errors.
+- Make sure the page is not displaying source code or this prompt as visible text.
+
+MOST IMPORTANT:
+The browser page must visually show the actual Live Synthist application.
+
+It must NOT show:
+"Create a simple working web app..."
+or any other part of this prompt.
+
+FINAL CHECK BEFORE FINISHING:
+Test this exact flow:
+
+1. Open website.
+2. Live Synthist UI appears.
+3. Tap Upload Video.
+4. Select a video.
+5. Video appears.
+6. Play/Pause works.
+7. REAL/MEI slider works from 0–100%.
+8. Balance values update.
+9. Reel 9:16 preview works.
+10. Trim controls work as far as browser capabilities allow.
+11. Export button gives a truthful result.
+12. Refreshing the page still loads the application, not the prompt.
+
+IMPORTANT FINAL INSTRUCTION:
+Do not just save these instructions as text.
+IMPLEMENT THE APPLICATION IN THE PROJECT FILES NOW.
