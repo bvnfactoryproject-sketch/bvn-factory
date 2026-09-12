@@ -212,6 +212,7 @@ video {
   z-index: 1000;
   max-width: 600px;
   margin: 0 auto;
+  overflow-x: auto;
 }
 
 .nav button {
@@ -223,6 +224,7 @@ video {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 50px;
 }
 
 .nav button.active {
@@ -372,6 +374,217 @@ p {
   font-size: 18px;
   margin: 8px 0;
 }
+
+/* 3D VISUAL SCREEN STYLES */
+#canvas3d {
+  width: 100%;
+  height: 400px;
+  border-radius: 20px;
+  background: #000;
+  border: 2px solid #26313e;
+  display: block;
+  margin: 16px 0;
+}
+
+.webgl-fallback {
+  background: #0a0e13;
+  border: 2px solid #26313e;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  color: #aeb8c7;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* PUMPING STATION STYLES */
+.pump-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.pump-stat {
+  background: #0a0e13;
+  border: 2px solid #26313e;
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+}
+
+.pump-stat-label {
+  font-size: 12px;
+  color: #aeb8c7;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pump-stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2f7ff5;
+  margin-bottom: 6px;
+}
+
+.pump-stat-unit {
+  font-size: 12px;
+  color: #aeb8c7;
+}
+
+.pump-status {
+  background: #0a0e13;
+  border: 2px solid #26313e;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.pump-status-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #51cf66;
+  margin-right: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.pump-status-indicator.off {
+  background: #666;
+  animation: none;
+}
+
+.pump-status-text {
+  font-size: 14px;
+  color: #aeb8c7;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(81, 207, 102, 0.7);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 6px rgba(81, 207, 102, 0);
+  }
+}
+
+.pump-visualization {
+  background: #0a0e13;
+  border: 2px solid #26313e;
+  border-radius: 14px;
+  padding: 20px;
+  margin: 16px 0;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pump-container {
+  width: 60px;
+  height: 80px;
+  background: linear-gradient(135deg, #2f7ff5, #1e5ab8);
+  border: 2px solid #2f7ff5;
+  border-radius: 8px;
+  margin: 0 auto 20px;
+  position: relative;
+  box-shadow: 0 0 20px rgba(47, 127, 245, 0.3);
+}
+
+.pump-piston {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 40px;
+  height: 12px;
+  background: #ffd700;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  animation: pump-motion 1s infinite;
+}
+
+.pump-piston.stopped {
+  animation: none;
+  top: 35%;
+}
+
+@keyframes pump-motion {
+  0%, 100% {
+    transform: translateX(-50%) translateY(-50%);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+.flow-pipe {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 20px;
+  border: 2px solid #51cf66;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.flow-indicator {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #51cf66, transparent);
+  bottom: 8px;
+  left: 0;
+  animation: flow-animation 0.8s infinite;
+}
+
+.flow-indicator.stopped {
+  animation: none;
+  background: #444;
+}
+
+@keyframes flow-animation {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+}
+
+.flow-meter {
+  text-align: center;
+  margin-top: 20px;
+  color: #aeb8c7;
+  font-size: 13px;
+}
+
+.flow-bar {
+  background: #0a0e13;
+  border: 1px solid #26313e;
+  border-radius: 4px;
+  height: 6px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.flow-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #51cf66, #2f7ff5);
+  width: 0%;
+  transition: width 0.2s ease;
+}
 </style>
 </head>
 
@@ -415,12 +628,6 @@ UPLOAD VIDEO
 <button class="large-button" onclick="splitHere()">✂️ SPLIT HERE</button>
 <button class="secondary large-button" onclick="resetSplits()">RESET SPLITS</button>
 <div id="clipList"></div>
-</div>
-
-<div class="card">
-<h2>🎮 PUMPING STATION</h2>
-<button class="secondary large-button" onclick="togglePump()">🎮 PUMPING STATION</button>
-<div id="pump" class="info">READY — optional visual mode</div>
 </div>
 </section>
 
@@ -505,6 +712,79 @@ Start: <span id="startText">0:00</span> — End: <span id="endText">0:00</span>
 </div>
 </section>
 
+<!-- 3D VISUAL SCREEN -->
+<section id="3d-visual" class="screen">
+<div class="card">
+<h2>🎆 3D VISUAL</h2>
+<p class="info">Interactive 3D visualization with real-time rendering</p>
+<canvas id="canvas3d"></canvas>
+<div id="webglFallback" class="webgl-fallback" style="display: none;">
+WebGL is not available in your browser. This feature requires a modern browser with WebGL support.
+</div>
+<div class="button-group dual">
+<button onclick="reset3DScene()">RESET</button>
+<button class="secondary" onclick="toggle3DAnimation()">PAUSE</button>
+</div>
+</div>
+</section>
+
+<!-- PUMPING STATION SCREEN -->
+<section id="pumping-station" class="screen">
+<div class="card">
+<h2>🎮 PUMPING STATION</h2>
+<div class="pump-status">
+<span class="pump-status-indicator" id="pumpIndicator" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #666; margin-right: 8px;"></span>
+<span class="pump-status-text" id="pumpStatusText">STANDBY</span>
+</div>
+
+<div class="pump-dashboard">
+<div class="pump-stat">
+<div class="pump-stat-label">Pressure</div>
+<div class="pump-stat-value" id="pumpPressure">0</div>
+<div class="pump-stat-unit">PSI</div>
+</div>
+
+<div class="pump-stat">
+<div class="pump-stat-label">Flow Rate</div>
+<div class="pump-stat-value" id="pumpFlow">0</div>
+<div class="pump-stat-unit">GPM</div>
+</div>
+
+<div class="pump-stat">
+<div class="pump-stat-label">Temperature</div>
+<div class="pump-stat-value" id="pumpTemp">72</div>
+<div class="pump-stat-unit">°F</div>
+</div>
+
+<div class="pump-stat">
+<div class="pump-stat-label">Power</div>
+<div class="pump-stat-value" id="pumpPower">0</div>
+<div class="pump-stat-unit">kW</div>
+</div>
+</div>
+
+<div class="pump-visualization">
+<div class="pump-container">
+<div class="pump-piston" id="pumpPiston"></div>
+</div>
+<div class="flow-pipe">
+<div class="flow-indicator" id="flowIndicator"></div>
+</div>
+<div class="flow-meter">
+<span id="flowStatus">Flow: Standby</span>
+<div class="flow-bar">
+<div class="flow-bar-fill" id="flowBarFill"></div>
+</div>
+</div>
+</div>
+
+<div class="button-group dual">
+<button class="large-button" id="pumpToggleBtn" onclick="togglePumpStation()">POWER ON</button>
+<button class="secondary" onclick="resetPumpStation()">RESET</button>
+</div>
+</div>
+</section>
+
 <!-- BOTTOM NAVIGATION -->
 <div class="nav">
 <button class="active" data-screen="home" onclick="showScreen('home')">HOME</button>
@@ -513,6 +793,8 @@ Start: <span id="startText">0:00</span> — End: <span id="endText">0:00</span>
 <button data-screen="reel" onclick="showScreen('reel')">REEL</button>
 <button data-screen="trim" onclick="showScreen('trim')">TRIM</button>
 <button data-screen="export" onclick="showScreen('export')">EXPORT</button>
+<button data-screen="3d-visual" onclick="showScreen('3d-visual')">3D</button>
+<button data-screen="pumping-station" onclick="showScreen('pumping-station')">PUMP</button>
 </div>
 
 </div>
@@ -531,6 +813,11 @@ let splitPoints = [];
 let clips = [];
 let selectedClip = 0;
 let pumpActive = false;
+let animationRunning3D = true;
+let pumpAnimationId = null;
+let scene3D = null;
+let renderer3D = null;
+let canvas3D = null;
 
 // ===== UTILITY =====
 const $ = id => document.getElementById(id);
@@ -854,7 +1141,10 @@ video.addEventListener('timeupdate', () => {
 function showScreen(id) {
   // Hide all screens
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
-  $(id).classList.add('active');
+  const screenEl = $(id);
+  if (screenEl) {
+    screenEl.classList.add('active');
+  }
 
   // Update nav buttons
   document.querySelectorAll('.nav button').forEach(b => {
@@ -867,6 +1157,11 @@ function showScreen(id) {
     if (id === 'reel') reelVideo.currentTime = video.currentTime;
     if (id === 'trim') trimVideo.currentTime = video.currentTime;
   }
+
+  // Initialize 3D scene when entering 3d-visual screen
+  if (id === '3d-visual' && !scene3D) {
+    init3DScene();
+  }
 }
 
 // ===== REEL MODES =====
@@ -878,14 +1173,291 @@ function cropMode() {
   reelVideo.style.objectFit = 'cover';
 }
 
-// ===== PUMPING STATION =====
-function togglePump() {
-  pumpActive = !pumpActive;
-  const p = $('pump');
-  if (pumpActive) {
-    p.textContent = '🎮 PUMPING STATION ACTIVE — visual experiment mode';
+// ===== 3D VISUAL IMPLEMENTATION =====
+function init3DScene() {
+  canvas3D = $('canvas3d');
+  if (!canvas3D) return;
+
+  const webglFallback = $('webglFallback');
+
+  // Check WebGL support
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) {
+    webglFallback.style.display = 'block';
+    canvas3D.style.display = 'none';
+    return;
+  }
+
+  // Create simple 3D scene using canvas context
+  const ctx = canvas3D.getContext('2d');
+  if (!ctx) {
+    webglFallback.style.display = 'block';
+    canvas3D.style.display = 'none';
+    return;
+  }
+
+  // Store context for animation
+  scene3D = {
+    ctx: ctx,
+    canvas: canvas3D,
+    rotation: 0,
+    time: 0,
+    particles: generateParticles(150)
+  };
+
+  // Resize canvas
+  resizeCanvas3D();
+  window.addEventListener('resize', resizeCanvas3D);
+
+  // Start animation
+  animate3DScene();
+}
+
+function generateParticles(count) {
+  const particles = [];
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * 400 - 200,
+      y: Math.random() * 400 - 200,
+      z: Math.random() * 400 - 200,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      vz: (Math.random() - 0.5) * 2,
+      size: Math.random() * 2 + 1,
+      color: ['#2f7ff5', '#3a8aff', '#51cf66', '#ffd700', '#ff6b6b'][Math.floor(Math.random() * 5)]
+    });
+  }
+  return particles;
+}
+
+function resizeCanvas3D() {
+  if (!canvas3D) return;
+  const parent = canvas3D.parentElement;
+  if (parent) {
+    canvas3D.width = parent.clientWidth;
+    canvas3D.height = 400;
+  }
+}
+
+function rotate3DPoint(x, y, z, angleX, angleY, angleZ) {
+  // Rotate around X
+  let cy = Math.cos(angleX);
+  let sy = Math.sin(angleX);
+  let ty = y * cy - z * sy;
+  let tz = y * sy + z * cy;
+
+  // Rotate around Y
+  cy = Math.cos(angleY);
+  sy = Math.sin(angleY);
+  let tx = x * cy + tz * sy;
+  tz = -x * sy + tz * cy;
+
+  // Rotate around Z
+  cy = Math.cos(angleZ);
+  sy = Math.sin(angleZ);
+  let fx = tx * cy - ty * sy;
+  let fy = tx * sy + ty * cy;
+
+  return { x: fx, y: fy, z: tz };
+}
+
+function animate3DScene() {
+  if (!scene3D || !animationRunning3D) {
+    if (animationRunning3D) requestAnimationFrame(animate3DScene);
+    return;
+  }
+
+  const { ctx, canvas, particles } = scene3D;
+  scene3D.rotation += 0.02;
+  scene3D.time += 1;
+
+  // Clear canvas with fade
+  ctx.fillStyle = 'rgba(9, 13, 18, 0.1)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const scale = 0.5;
+
+  // Update and draw particles
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.z += p.vz;
+
+    // Wrap around boundaries
+    if (Math.abs(p.x) > 200) p.vx *= -1;
+    if (Math.abs(p.y) > 200) p.vy *= -1;
+    if (Math.abs(p.z) > 200) p.vz *= -1;
+
+    const rotated = rotate3DPoint(p.x, p.y, p.z, 
+      scene3D.rotation * 0.5, 
+      scene3D.rotation, 
+      scene3D.rotation * 0.3
+    );
+
+    const screenX = centerX + rotated.x * scale;
+    const screenY = centerY + rotated.y * scale;
+    const depth = (rotated.z + 200) / 400;
+
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0.2, depth);
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, p.size * depth, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Draw wireframe sphere
+  ctx.strokeStyle = 'rgba(47, 127, 245, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.5;
+
+  for (let lat = 0; lat < 6; lat++) {
+    for (let lon = 0; lon < 12; lon++) {
+      const angle1 = (lat / 6) * Math.PI;
+      const angle2 = ((lat + 1) / 6) * Math.PI;
+      const angle3 = (lon / 12) * Math.PI * 2;
+      const angle4 = ((lon + 1) / 12) * Math.PI * 2;
+
+      const r = 150;
+      const p1 = {
+        x: r * Math.sin(angle1) * Math.cos(angle3),
+        y: r * Math.cos(angle1),
+        z: r * Math.sin(angle1) * Math.sin(angle3)
+      };
+
+      const p2 = {
+        x: r * Math.sin(angle2) * Math.cos(angle3),
+        y: r * Math.cos(angle2),
+        z: r * Math.sin(angle2) * Math.sin(angle3)
+      };
+
+      const rot1 = rotate3DPoint(p1.x, p1.y, p1.z, scene3D.rotation * 0.3, scene3D.rotation, scene3D.rotation * 0.5);
+      const rot2 = rotate3DPoint(p2.x, p2.y, p2.z, scene3D.rotation * 0.3, scene3D.rotation, scene3D.rotation * 0.5);
+
+      const sx1 = centerX + rot1.x * scale;
+      const sy1 = centerY + rot1.y * scale;
+      const sx2 = centerX + rot2.x * scale;
+      const sy2 = centerY + rot2.y * scale;
+
+      if (lon === 0) {
+        ctx.beginPath();
+        ctx.moveTo(sx1, sy1);
+      }
+      ctx.lineTo(sx2, sy2);
+    }
+  }
+  ctx.stroke();
+
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(animate3DScene);
+}
+
+function toggle3DAnimation() {
+  animationRunning3D = !animationRunning3D;
+  if (animationRunning3D) {
+    animate3DScene();
+  }
+}
+
+function reset3DScene() {
+  if (scene3D) {
+    scene3D.rotation = 0;
+    scene3D.time = 0;
+    scene3D.particles = generateParticles(150);
+  }
+}
+
+// ===== PUMPING STATION IMPLEMENTATION =====
+let pumpState = {
+  active: false,
+  pressure: 0,
+  flow: 0,
+  temp: 72,
+  power: 0,
+  maxPressure: 100,
+  maxFlow: 150
+};
+
+function togglePumpStation() {
+  pumpState.active = !pumpState.active;
+  updatePumpDisplay();
+  animatePump();
+}
+
+function resetPumpStation() {
+  pumpState.active = false;
+  pumpState.pressure = 0;
+  pumpState.flow = 0;
+  pumpState.temp = 72;
+  pumpState.power = 0;
+  updatePumpDisplay();
+  if (pumpAnimationId) {
+    cancelAnimationFrame(pumpAnimationId);
+    pumpAnimationId = null;
+  }
+}
+
+function updatePumpDisplay() {
+  const indicator = $('pumpIndicator');
+  const statusText = $('pumpStatusText');
+  const pressureEl = $('pumpPressure');
+  const flowEl = $('pumpFlow');
+  const tempEl = $('pumpTemp');
+  const powerEl = $('pumpPower');
+  const piston = $('pumpPiston');
+  const flowIndicator = $('flowIndicator');
+  const flowStatus = $('flowStatus');
+  const flowBarFill = $('flowBarFill');
+  const toggleBtn = $('pumpToggleBtn');
+
+  if (pumpState.active) {
+    indicator.classList.remove('off');
+    indicator.style.background = '#51cf66';
+    statusText.textContent = 'PUMPING';
+    toggleBtn.textContent = 'POWER OFF';
   } else {
-    p.textContent = 'READY — optional visual mode';
+    indicator.classList.add('off');
+    indicator.style.background = '#666';
+    statusText.textContent = 'STANDBY';
+    toggleBtn.textContent = 'POWER ON';
+  }
+
+  // Update numerical displays
+  pressureEl.textContent = Math.round(pumpState.pressure);
+  flowEl.textContent = Math.round(pumpState.flow);
+  tempEl.textContent = Math.round(pumpState.temp);
+  powerEl.textContent = (pumpState.power / 1000).toFixed(1);
+
+  // Update visual indicators
+  if (pumpState.active) {
+    piston.classList.remove('stopped');
+    flowIndicator.classList.remove('stopped');
+    flowStatus.textContent = 'Flow: ' + Math.round(pumpState.flow) + ' GPM';
+  } else {
+    piston.classList.add('stopped');
+    flowIndicator.classList.add('stopped');
+    flowStatus.textContent = 'Flow: Standby';
+  }
+
+  const flowPercent = (pumpState.flow / pumpState.maxFlow) * 100;
+  flowBarFill.style.width = flowPercent + '%';
+}
+
+function animatePump() {
+  if (!pumpState.active) return;
+
+  // Simulate pump dynamics
+  pumpState.pressure = Math.min(pumpState.pressure + 2, pumpState.maxPressure);
+  pumpState.flow = Math.min(pumpState.flow + 3, pumpState.maxFlow);
+  pumpState.temp = Math.min(pumpState.temp + 0.5, 95);
+  pumpState.power = pumpState.flow * 0.8;
+
+  updatePumpDisplay();
+
+  if (pumpState.active) {
+    pumpAnimationId = requestAnimationFrame(animatePump);
   }
 }
 
@@ -912,6 +1484,7 @@ function exportVideo() {
 
 // ===== INITIALIZE =====
 rebuildClips();
+console.log('[APP] Live Synthist initialized');
 </script>
 </body>
 </html>
