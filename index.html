@@ -547,11 +547,24 @@ $('file').addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
 
+  console.log('[VIDEO] File selected:', f.name, 'Type:', f.type, 'Size:', f.size);
+
+  // Reset video state
+  duration = 0;
+  splitPoints = [];
+  selectedClip = 0;
+
   // Revoke old URL
-  if (objectURL) URL.revokeObjectURL(objectURL);
+  if (objectURL) {
+    URL.revokeObjectURL(objectURL);
+    console.log('[VIDEO] Previous object URL revoked');
+  }
 
+  // Create new object URL
   objectURL = URL.createObjectURL(f);
+  console.log('[VIDEO] New object URL created');
 
+  // Set all video elements
   video.src = objectURL;
   splitVideo.src = objectURL;
   reelVideo.src = objectURL;
@@ -559,27 +572,58 @@ $('file').addEventListener('change', e => {
 
   $('filename').textContent = f.name;
   $('status').textContent = 'Loading video…';
+  $('status').classList.remove('error', 'success');
 
-  // Load video in all elements
+  // Setup handlers BEFORE calling load()
+  const onVideoReady = () => {
+    if (duration > 0) {
+      console.log('[VIDEO] Video ready. Duration:', duration);
+      $('status').textContent = '✓ Video ready';
+      $('status').classList.remove('error');
+      $('status').classList.add('success');
+      setupTrim();
+      rebuildClips();
+    }
+  };
+
+  const onVideoError = (evt) => {
+    console.error('[VIDEO] Error loading video:', evt, video.error);
+    $('status').textContent = 'This video format cannot be played by this browser. Please choose an MP4 video.';
+    $('status').classList.remove('success');
+    $('status').classList.add('error');
+  };
+
+  // Attach handlers to detect when video metadata is ready
+  video.addEventListener('loadedmetadata', () => {
+    console.log('[VIDEO] loadedmetadata event fired. Duration:', video.duration);
+    duration = video.duration;
+    onVideoReady();
+  }, { once: true });
+
+  video.addEventListener('canplay', () => {
+    console.log('[VIDEO] canplay event fired. Duration:', video.duration);
+    if (duration === 0) {
+      duration = video.duration;
+      onVideoReady();
+    }
+  }, { once: true });
+
+  video.addEventListener('durationchange', () => {
+    console.log('[VIDEO] durationchange event fired. Duration:', video.duration);
+    if (video.duration > 0 && duration === 0) {
+      duration = video.duration;
+      onVideoReady();
+    }
+  }, { once: true });
+
+  video.addEventListener('error', onVideoError);
+
+  // Load the video
+  console.log('[VIDEO] Calling load() on all video elements');
   video.load();
   splitVideo.load();
   reelVideo.load();
   trimVideo.load();
-
-  // Once metadata is loaded
-  video.onloadedmetadata = () => {
-    duration = video.duration;
-    $('status').textContent = '✓ Video ready';
-    $('status').classList.remove('error');
-    $('status').classList.add('success');
-    setupTrim();
-    rebuildClips();
-  };
-
-  video.onerror = () => {
-    $('status').textContent = 'Video format not supported by this browser.';
-    $('status').classList.add('error');
-  };
 });
 
 // ===== TRIM SETUP =====
