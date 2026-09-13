@@ -877,7 +877,55 @@ function time(t) {
   const s = Math.floor(t % 60);
   return m + ':' + String(s).padStart(2, '0');
 }
+// ===== MAIN SCREEN NAVIGATION =====
 
+function showScreen(screenId) {
+  if (!screenId) return;
+
+  const target = document.getElementById(screenId);
+  if (!target) {
+    console.warn("Screen not found:", screenId);
+    return;
+  }
+
+  // Hide every screen
+  document.querySelectorAll(".screen").forEach(function (screen) {
+    screen.classList.remove("active");
+  });
+
+  // Show selected screen
+  target.classList.add("active");
+
+  // Update navigation buttons
+  document.querySelectorAll(".nav_button").forEach(function (button) {
+    button.classList.toggle(
+      "active",
+      button.getAttribute("data-screen") === screenId
+    );
+  });
+
+  // 3D / Car Racing screen
+  if (screenId === "3d-visual") {
+    setTimeout(function () {
+      if (typeof init3DScene === "function") {
+        init3DScene();
+      }
+    }, 50);
+  }
+
+  // Pump screen
+  if (screenId === "pumping-station") {
+    if (typeof stopPumpAnimation === "function") {
+      stopPumpAnimation();
+    }
+  }
+
+  // Scroll screen to top
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
 // ===== NAVIGATION =====
 // ===== NAVIGATION CLICK FIX =====
 document.addEventListener('click', function (e) {
