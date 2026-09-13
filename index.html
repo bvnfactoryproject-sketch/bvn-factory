@@ -2631,7 +2631,44 @@ function resetPumpStation() {
   if (pumpActive) {
     togglePumpStation();
   }
-}
+}/* ===== NITHTHU SAFE NAVIGATION FIX V1 ===== */
+
+(function () {
+  // Prevent duplicate installation
+  if (window.__niththuNavigationFix) return;
+  window.__niththuNavigationFix = true;
+
+  document.addEventListener("click", function (e) {
+    const button = e.target.closest(".nav_button");
+
+    if (!button) return;
+
+    const screenId = button.getAttribute("data-screen");
+
+    if (!screenId) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (typeof window.showScreen === "function") {
+      window.showScreen(screenId);
+    }
+  }, true);
+
+  // Keep current screen after page initialization
+  document.addEventListener("DOMContentLoaded", function () {
+    const activeScreen =
+      document.querySelector(".screen.active") ||
+      document.querySelector(".screen");
+
+    if (
+      activeScreen &&
+      typeof window.showScreen === "function"
+    ) {
+      window.showScreen(activeScreen.id);
+    }
+  });
+})();
 </script>
 </body>
 </html>
