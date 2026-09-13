@@ -904,969 +904,520 @@ function showScreen(screenId) {
 
 
 // ===== 3D PHYSICS ENGINE =====
-
-let nextParticleId = 1;
-
-class Particle {
-  constructor(x, y, vx, vy) {
-    this.id = nextParticleId++;
-
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-
-    this.radius = 10 + Math.random() * 5;
-    this.color = `hsl(${Math.random() * 360}, 75%, 60%)`;
-
-    // Prevent repeated bounce counting
-    this.floorCooldown = 0;
-    this.lastCollision = {};
-  }
-
-  update(gravity, width, height, particles, dt, frameId) {
-
-    // Gravity
-    this.vy += gravity * dt;
-
-    // Position
-    this.x += this.vx * dt * 60;
-    this.y += this.vy * dt * 60;
-
-    // Air damping
-    this.vx *= Math.pow(0.992, dt * 60);
-    this.vy *= Math.pow(0.999, dt * 60);
-
-    // -------------------------
-    // FLOOR COLLISION
-    // -------------------------
-    const floorY = height - 28;
-
-    if (this.y + this.radius >= floorY) {
-
-      this.y = floorY - this.radius;
-
-      // Only count a real downward impact
-      if (
-        this.vy > 0.35 &&
-        this.floorCooldown <= 0
-      ) {
-        this.vy = -this.vy * 0.72;
-
-        bounceCounter++;
-
-        this.floorCooldown = 0.18;
-      } else {
-        // Stop tiny vibrations
-        if (Math.abs(this.vy) < 0.45) {
-          this.vy = 0;
-        }
-      }
-    }
-
-    if (this.floorCooldown > 0) {
-      this.floorCooldown -= dt;
-    }
-
-    // -------------------------
-    // LEFT WALL
-    // -------------------------
-    if (this.x - this.radius < 5) {
-      this.x = 5 + this.radius;
-
-      if (this.vx < -0.5) {
-        this.vx = -this.vx * 0.78;
-      }
-    }
-
-    // -------------------------
-    // RIGHT WALL
-    // -------------------------
-    if (this.x + this.radius > width - 5) {
-      this.x = width - 5 - this.radius;
-
-      if (this.vx > 0.5) {
-        this.vx = -this.vx * 0.78;
-      }
-    }
-
-    // -------------------------
-    // CEILING
-    // -------------------------
-    if (this.y - this.radius < 5) {
-      this.y = 5 + this.radius;
-
-      if (this.vy < -0.5) {
-        this.vy = -this.vy * 0.78;
-      }
-    }
-
-    // -------------------------
-    // PARTICLE COLLISIONS
-    // -------------------------
-    for (const other of particles) {
-
-      if (other === this) continue;
-
-      const dx = other.x - this.x;
-      const dy = other.y - this.y;
-
-      const distance =
-        Math.sqrt(dx * dx + dy * dy);
-
-      const minDistance =
-        this.radius + other.radius;
-
-      if (
-        distance > 0 &&
-        distance < minDistance
-      ) {
-
-        const nx = dx / distance;
-        const ny = dy / distance;
-
-        // Relative velocity
-        const rvx = other.vx - this.vx;
-        const rvy = other.vy - this.vy;
-
-        const relativeVelocity =
-          rvx * nx + rvy * ny;
-
-        // Only collide when moving toward each other
-        if (relativeVelocity < 0) {
-
-          const pairKey =
-            Math.min(this.id, other.id) +
-            '-' +
-            Math.max(this.id, other.id);
-
-          if (this.lastCollision[pairKey] !== frameId) {
-
-            const impulse =
-              -relativeVelocity * 0.85;
-
-            this.vx -= impulse * nx;
-            this.vy -= impulse * ny;
-
-            other.vx += impulse * nx;
-            other.vy += impulse * ny;
-
-            // Separate overlapping particles
-            const overlap =
-              minDistance - distance;
-
-            this.x -= nx * overlap * 0.5;
-            this.y -= ny * overlap * 0.5;
-
-            other.x += nx * overlap * 0.5;
-            other.y += ny * overlap * 0.5;
-
-            this.lastCollision[pairKey] =
-              frameId;
-
-            other.lastCollision[pairKey] =
-              frameId;
-          }
-        }
-      }
-    }
-
-    // Prevent unstable speeds
-    const maxSpeed = 18;
-
-    this.vx = Math.max(
-      -maxSpeed,
-      Math.min(maxSpeed, this.vx)
-    );
-
-    this.vy = Math.max(
-      -maxSpeed,
-      Math.min(maxSpeed, this.vy)
-    );
-  }
-
-  draw(ctx) {
-
-    const r = this.radius;
-
-    // Shadow
-    ctx.save();
-
-    ctx.globalAlpha = 0.28;
-    ctx.fillStyle = '#000';
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-      this.x + 4,
-      this.y + r + 5,
-      r * 1.15,
-      r * 0.35,
-      0,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
-
-    ctx.restore();
-
-    // 3D sphere gradient
-    const gradient =
-      ctx.createRadialGradient(
-        this.x - r * 0.35,
-        this.y - r * 0.4,
-        r * 0.08,
-        this.x,
-        this.y,
-        r
-      );
-
-    gradient.addColorStop(
-      0,
-      '#ffffff'
-    );
-
-    gradient.addColorStop(
-      0.18,
-      this.color
-    );
-
-    gradient.addColorStop(
-      0.72,
-      this.color
-    );
-
-    gradient.addColorStop(
-      1,
-      '#05070a'
-    );
-
-    ctx.fillStyle = gradient;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      this.x,
-      this.y,
-      r,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
-
-    // Highlight
-    ctx.fillStyle =
-      'rgba(255,255,255,0.65)';
-
-    ctx.beginPath();
-
-    ctx.arc(
-      this.x - r * 0.3,
-      this.y - r * 0.35,
-      r * 0.18,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
+// ===== CAR RACING GAME - OFFLINE =====
+
+let racingAnimationId = null;
+let racingRunning = false;
+let racingSpeed = 0;
+let racingDistance = 0;
+let racingLap = 1;
+let racingScore = 0;
+let racingStartTime = 0;
+
+const racingCars = [];
+const racingKeys = {
+  left: false,
+  right: false,
+  accelerate: false,
+  brake: false
+};
+
+class RacingCar {
+  constructor(lane, color, isPlayer = false) {
+    this.lane = lane;
+    this.targetLane = lane;
+    this.color = color;
+    this.isPlayer = isPlayer;
+    this.x = lane;
+    this.z = isPlayer ? 0.15 : Math.random() * 0.75 + 0.2;
+    this.speed = isPlayer ? 0 : 0.4 + Math.random() * 0.35;
+    this.width = isPlayer ? 0.16 : 0.13;
+    this.height = isPlayer ? 0.10 : 0.08;
   }
 }
-
-
-class PhysicsEngine {
-
-  constructor(width, height) {
-
-    this.width = width;
-    this.height = height;
-
-    this.particles = [];
-
-    this.gravity = 9.8;
-
-    this.frameId = 0;
-
-    this.spawnInitialParticles();
-  }
-
-  addParticle(
-    x,
-    y,
-    vx = 0,
-    vy = 0
-  ) {
-
-    const p =
-      new Particle(
-        x,
-        y,
-        vx,
-        vy
-      );
-
-    this.particles.push(p);
-  }
-
-  spawnInitialParticles() {
-
-    // Visible immediately
-    const positions = [
-      [80, 80],
-      [170, 110],
-      [270, 75],
-      [380, 130],
-      [460, 90],
-      [320, 180]
-    ];
-
-    positions.forEach(
-      ([x, y], index) => {
-
-        this.addParticle(
-          x,
-          y,
-          (Math.random() - 0.5) * 2.5,
-          index * 0.15
-        );
-      }
-    );
-  }
-
-  update(dt) {
-
-    this.frameId++;
-
-    for (
-      const particle
-      of this.particles
-    ) {
-
-      particle.update(
-        this.gravity,
-        this.width,
-        this.height,
-        this.particles,
-        dt,
-        this.frameId
-      );
-    }
-  }
-
-  draw(ctx) {
-
-    // Background
-    const background =
-      ctx.createLinearGradient(
-        0,
-        0,
-        0,
-        this.height
-      );
-
-    background.addColorStop(
-      0,
-      '#07111c'
-    );
-
-    background.addColorStop(
-      0.55,
-      '#0c1925'
-    );
-
-    background.addColorStop(
-      1,
-      '#05080c'
-    );
-
-    ctx.fillStyle =
-      background;
-
-    ctx.fillRect(
-      0,
-      0,
-      this.width,
-      this.height
-    );
-
-
-    // -------------------------
-    // 3D FLOOR
-    // -------------------------
-
-    const horizon =
-      this.height * 0.58;
-
-    ctx.fillStyle =
-      '#111d29';
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      0,
-      horizon
-    );
-
-    ctx.lineTo(
-      this.width,
-      horizon
-    );
-
-    ctx.lineTo(
-      this.width,
-      this.height
-    );
-
-    ctx.lineTo(
-      0,
-      this.height
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    // Horizon line
-    ctx.strokeStyle =
-      '#41627e';
-
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      0,
-      horizon
-    );
-
-    ctx.lineTo(
-      this.width,
-      horizon
-    );
-
-    ctx.stroke();
-
-
-    // Perspective grid
-    ctx.strokeStyle =
-      'rgba(80,130,170,0.25)';
-
-    ctx.lineWidth = 1;
-
-
-    const centerX =
-      this.width / 2;
-
-
-    // Depth lines
-    for (
-      let i = -10;
-      i <= 10;
-      i++
-    ) {
-
-      const bottomX =
-        centerX +
-        i *
-        (this.width / 10);
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        centerX,
-        horizon
-      );
-
-      ctx.lineTo(
-        bottomX,
-        this.height
-      );
-
-      ctx.stroke();
-    }
-
-
-    // Horizontal perspective lines
-    for (
-      let i = 1;
-      i <= 8;
-      i++
-    ) {
-
-      const t = i / 8;
-
-      const y =
-        horizon +
-        Math.pow(t, 1.8) *
-        (this.height - horizon);
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-        0,
-        y
-      );
-
-      ctx.lineTo(
-        this.width,
-        y
-      );
-
-      ctx.stroke();
-    }
-
-
-    // -------------------------
-    // PARTICLES
-    // -------------------------
-
-    for (
-      const particle
-      of this.particles
-    ) {
-
-      particle.draw(ctx);
-    }
-
-
-    // Border
-    ctx.strokeStyle =
-      '#26313e';
-
-    ctx.lineWidth = 2;
-
-    ctx.strokeRect(
-      1,
-      1,
-      this.width - 2,
-      this.height - 2
-    );
-
-
-    // Title
-    ctx.fillStyle =
-      'rgba(255,255,255,0.7)';
-
-    ctx.font =
-      'bold 12px Arial';
-
-    ctx.fillText(
-      '3D PHYSICS LAB',
-      14,
-      22
-    );
-  }
-
-  reset() {
-
-    this.particles = [];
-
-    bounceCounter = 0;
-
-    this.spawnInitialParticles();
-  }
-}
-
-
-// =================================
-// 3D INITIALIZATION
-// =================================
-
-function resize3DCanvas() {
-
-  if (!canvas3D) return;
-
-  const rect =
-    canvas3D.getBoundingClientRect();
-
-  const width =
-    Math.max(
-      320,
-      Math.floor(rect.width)
-    );
-
-  const height =
-    Math.max(
-      300,
-      Math.floor(rect.height)
-    );
-
-  const dpr =
-    Math.min(
-      window.devicePixelRatio || 1,
-      2
-    );
-
-  canvas3D.width =
-    width * dpr;
-
-  canvas3D.height =
-    height * dpr;
-
-  const ctx =
-    canvas3D.getContext('2d');
-
-  if (!ctx) return;
-
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
-  );
-
-  if (physicsEngine) {
-
-    physicsEngine.width =
-      width;
-
-    physicsEngine.height =
-      height;
-  }
-}
-
 
 function init3DScene() {
-
   if (!canvas3D) return;
 
-  const rect =
-    canvas3D.getBoundingClientRect();
+  cancelAnimationFrame(racingAnimationId);
 
-  if (
-    rect.width <= 0 ||
-    rect.height <= 0
-  ) {
+  const rect = canvas3D.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    setTimeout(
-      init3DScene,
-      150
-    );
+  canvas3D.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas3D.height = Math.max(1, Math.floor(rect.height * dpr));
 
-    return;
-  }
+  canvas3D.style.display = 'block';
+  canvas3D.style.width = '100%';
+  canvas3D.style.height = '100%';
+  canvas3D.style.maxWidth = '100%';
+  canvas3D.style.maxHeight = '100%';
+  canvas3D.style.boxSizing = 'border-box';
 
-
-  resize3DCanvas();
-
-
-  // IMPORTANT:
-  // Create engine ONLY once
-  if (!physicsEngine) {
-
-    physicsEngine =
-      new PhysicsEngine(
-        canvas3D.clientWidth,
-        canvas3D.clientHeight
-      );
-
-    bounceCounter = 0;
-  }
-
-
-  const ctx =
-    canvas3D.getContext('2d');
-
+  const ctx = canvas3D.getContext('2d');
   if (!ctx) return;
 
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Draw immediately
-  physicsEngine.draw(ctx);
+  racingCars.length = 0;
 
+  // Player
+  racingCars.push(new RacingCar(0, '#19d3ff', true));
 
-  $('particleCount').innerText =
-    physicsEngine.particles.length;
+  // Opponents
+  racingCars.push(new RacingCar(-0.45, '#ff304f'));
+  racingCars.push(new RacingCar(0.45, '#ffd43b'));
+  racingCars.push(new RacingCar(-0.22, '#8b5cf6'));
+  racingCars.push(new RacingCar(0.22, '#22c55e'));
 
-  $('bounceCount').innerText =
-    bounceCounter;
+  racingSpeed = 0;
+  racingDistance = 0;
+  racingLap = 1;
+  racingScore = 0;
+  racingRunning = true;
+  racingStartTime = performance.now();
 
-  $('gravityValue').innerText =
-    physicsEngine.gravity.toFixed(1) +
-    'm/s²';
+  animate3D();
+}
 
+function resize3DCanvas() {
+  if (!canvas3D) return;
+  if (!document.getElementById('3d-visual')?.classList.contains('active')) return;
 
-  if (!animationId3D) {
+  const rect = canvas3D.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    animationRunning3D = true;
+  canvas3D.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas3D.height = Math.max(1, Math.floor(rect.height * dpr));
 
-    lastFrameTime =
-      performance.now();
+  const ctx = canvas3D.getContext('2d');
+  if (ctx) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+}
 
+function updateRacingGame() {
+  const player = racingCars[0];
+  if (!player) return;
+
+  // Acceleration / brake
+  if (racingKeys.accelerate) {
+    racingSpeed += 0.018;
+  } else {
+    racingSpeed -= 0.008;
+  }
+
+  if (racingKeys.brake) {
+    racingSpeed -= 0.035;
+  }
+
+  racingSpeed = Math.max(0, Math.min(1, racingSpeed));
+
+  // Steering
+  if (racingKeys.left) {
+    player.x -= 0.018 + racingSpeed * 0.012;
+  }
+
+  if (racingKeys.right) {
+    player.x += 0.018 + racingSpeed * 0.012;
+  }
+
+  // Keep player on road
+  player.x = Math.max(-0.78, Math.min(0.78, player.x));
+
+  racingDistance += racingSpeed * 0.75;
+
+  if (racingDistance >= 1000) {
+    racingDistance = 0;
+    racingLap++;
+    racingScore += 1000;
+  }
+
+  // Move opponents toward player
+  for (let i = 1; i < racingCars.length; i++) {
+    const car = racingCars[i];
+
+    car.z -= 0.003 + racingSpeed * 0.009;
+
+    if (car.z < -0.08) {
+      car.z = 0.95 + Math.random() * 0.2;
+      car.lane = [-0.55, -0.28, 0, 0.28, 0.55][
+        Math.floor(Math.random() * 5)
+      ];
+      car.x = car.lane;
+      racingScore += 100;
+    }
+
+    // Small AI movement
+    car.x += Math.sin(performance.now() * 0.001 + i) * 0.0008;
+    car.x = Math.max(-0.72, Math.min(0.72, car.x));
+
+    // Collision
+    if (
+      Math.abs(car.x - player.x) < 0.16 &&
+      Math.abs(car.z - player.z) < 0.10 &&
+      racingSpeed > 0.08
+    ) {
+      racingSpeed *= 0.35;
+    }
+  }
+
+  // Existing UI counters if present
+  const particle = document.getElementById('particleCount');
+  const bounce = document.getElementById('bounceCount');
+
+  if (particle) particle.innerText = '5';
+  if (bounce) bounce.innerText = Math.round(racingSpeed * 240);
+}
+
+function drawRoad(ctx, width, height) {
+  ctx.clearRect(0, 0, width, height);
+
+  // Sky
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, '#07111f');
+  sky.addColorStop(0.55, '#13233a');
+  sky.addColorStop(0.56, '#202020');
+  sky.addColorStop(1, '#050505');
+
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+
+  const horizon = height * 0.48;
+
+  // Sun / horizon glow
+  const glow = ctx.createRadialGradient(
+    width / 2,
+    horizon,
+    10,
+    width / 2,
+    horizon,
+    width * 0.55
+  );
+  glow.addColorStop(0, 'rgba(80,180,255,0.35)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  // Road
+  ctx.fillStyle = '#161616';
+
+  ctx.beginPath();
+  ctx.moveTo(width * 0.47, horizon);
+  ctx.lineTo(width * 0.53, horizon);
+  ctx.lineTo(width * 0.92, height);
+  ctx.lineTo(width * 0.08, height);
+  ctx.closePath();
+  ctx.fill();
+
+  // Road borders
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(width * 0.47, horizon);
+  ctx.lineTo(width * 0.08, height);
+  ctx.moveTo(width * 0.53, horizon);
+  ctx.lineTo(width * 0.92, height);
+  ctx.stroke();
+
+  // Perspective lane lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 2;
+
+  for (let lane = -2; lane <= 2; lane++) {
+    const bottomX = width / 2 + lane * width * 0.21;
+
+    ctx.beginPath();
+    ctx.moveTo(width / 2 + lane * 7, horizon);
+    ctx.lineTo(bottomX, height);
+    ctx.stroke();
+  }
+
+  // Moving road markings
+  const offset = (racingDistance * 0.012) % 1;
+
+  for (let i = 0; i < 16; i++) {
+    let p = (i / 16 + offset) % 1;
+    let y = horizon + Math.pow(p, 2.2) * (height - horizon);
+
+    const roadWidth = 0.06 + p * 0.7;
+    const lineWidth = Math.max(2, p * 8);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillRect(
+      width / 2 - lineWidth / 2,
+      y,
+      lineWidth,
+      Math.max(2, roadWidth * 0.03)
+    );
+  }
+
+  // Side lights
+  for (let i = 0; i < 14; i++) {
+    let p = (i / 14 + offset) % 1;
+    let y = horizon + Math.pow(p, 2.1) * (height - horizon);
+    let spread = 0.04 + p * 0.45;
+
+    ctx.fillStyle = '#1aa7ff';
+
+    ctx.beginPath();
+    ctx.arc(width / 2 - width * spread, y, 2 + p * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(width / 2 + width * spread, y, 2 + p * 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawCar(ctx, x, y, scale, color, player = false) {
+  const w = 70 * scale;
+  const h = 105 * scale;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(0, h * 0.48, w * 0.65, h * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Car body
+  const body = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+  body.addColorStop(0, '#111');
+  body.addColorStop(0.25, color);
+  body.addColorStop(0.55, '#ffffff');
+  body.addColorStop(0.75, color);
+  body.addColorStop(1, '#111');
+
+  ctx.fillStyle = body;
+
+  ctx.beginPath();
+  ctx.roundRect(-w / 2, -h / 2, w, h, 12 * scale);
+  ctx.fill();
+
+  // Windshield
+  ctx.fillStyle = '#08121e';
+
+  ctx.beginPath();
+  ctx.moveTo(-w * 0.34, -h * 0.32);
+  ctx.lineTo(w * 0.34, -h * 0.32);
+  ctx.lineTo(w * 0.25, -h * 0.04);
+  ctx.lineTo(-w * 0.25, -h * 0.04);
+  ctx.closePath();
+  ctx.fill();
+
+  // Rear/front light details
+  ctx.fillStyle = player ? '#00eaff' : '#ff263d';
+
+  ctx.fillRect(
+    -w * 0.34,
+    h * 0.25,
+    w * 0.18,
+    h * 0.07
+  );
+
+  ctx.fillRect(
+    w * 0.16,
+    h * 0.25,
+    w * 0.18,
+    h * 0.07
+  );
+
+  // Wheels
+  ctx.fillStyle = '#050505';
+
+  ctx.fillRect(-w * 0.57, -h * 0.27, w * 0.15, h * 0.30);
+  ctx.fillRect(w * 0.42, -h * 0.27, w * 0.15, h * 0.30);
+
+  ctx.fillRect(-w * 0.57, h * 0.17, w * 0.15, h * 0.30);
+  ctx.fillRect(w * 0.42, h * 0.17, w * 0.15, h * 0.30);
+
+  ctx.restore();
+}
+
+function drawRacingGame(ctx, width, height) {
+  drawRoad(ctx, width, height);
+
+  const horizon = height * 0.48;
+
+  // Draw opponents far → near
+  const opponents = racingCars
+    .slice(1)
+    .sort((a, b) => a.z - b.z);
+
+  for (const car of opponents) {
+    const p = Math.max(0, Math.min(1, car.z));
+
+    const y = horizon + Math.pow(1 - p, 1.8) * (height - horizon);
+    const scale = 0.22 + (1 - p) * 0.85;
+
+    const roadX = width / 2 + car.x * width * (0.08 + (1 - p) * 0.43);
+
+    drawCar(ctx, roadX, y, scale, car.color, false);
+  }
+
+  // Player
+  const player = racingCars[0];
+
+  if (player) {
+    drawCar(
+      ctx,
+      width / 2 + player.x * width * 0.43,
+      height * 0.79,
+      1.05,
+      player.color,
+      true
+    );
+  }
+
+  // HUD
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px Arial';
+
+  ctx.fillText(
+    'SPEED  ' + Math.round(racingSpeed * 240) + ' KM/H',
+    18,
+    28
+  );
+
+  ctx.fillText(
+    'LAP  ' + racingLap,
+    width - 80,
+    28
+  );
+
+  ctx.fillText(
+    'SCORE  ' + racingScore,
+    18,
+    52
+  );
+
+  // Start hint
+  if (racingSpeed < 0.02) {
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText(
+      'ACCELERATE TO START',
+      width / 2,
+      height * 0.20
+    );
+    ctx.textAlign = 'left';
+  }
+}
+
+function animate3D() {
+  if (!racingRunning || !canvas3D) return;
+
+  const ctx = canvas3D.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas3D.getBoundingClientRect();
+
+  updateRacingGame();
+  drawRacingGame(ctx, rect.width, rect.height);
+
+  racingAnimationId = requestAnimationFrame(animate3D);
+}
+
+function reset3DScene() {
+  cancelAnimationFrame(racingAnimationId);
+
+  racingSpeed = 0;
+  racingDistance = 0;
+  racingLap = 1;
+  racingScore = 0;
+
+  init3DScene();
+}
+
+function toggle3DAnimation() {
+  racingRunning = !racingRunning;
+
+  const btn = document.querySelector(
+    '#3d-visual .button-group.dual .secondary'
+  );
+
+  if (btn) {
+    btn.innerText = racingRunning ? 'PAUSE' : 'RESUME';
+  }
+
+  if (racingRunning) {
     animate3D();
   }
 }
 
-
-// =================================
-// ANIMATION LOOP
-// =================================
-
-function animate3D() {
-
-  if (
-    !animationRunning3D ||
-    !physicsEngine ||
-    !canvas3D
-  ) {
-
-    animationId3D = null;
-
-    return;
-  }
-
-
-  const now =
-    performance.now();
-
-  let dt =
-    (now - lastFrameTime) / 1000;
-
-  lastFrameTime = now;
-
-
-  // Protect physics from lag
-  dt =
-    Math.min(
-      Math.max(dt, 0.001),
-      0.033
-    );
-
-
-  const currentFPS =
-    Math.round(
-      1 / dt
-    );
-
-  const displayFPS =
-    Math.min(
-      60,
-      Math.max(
-        1,
-        currentFPS
-      )
-    );
-
-
-  physicsEngine.update(dt);
-
-
-  const ctx =
-    canvas3D.getContext('2d');
-
-  if (ctx) {
-
-    physicsEngine.draw(ctx);
-  }
-
-
-  $('particleCount').innerText =
-    physicsEngine.particles.length;
-
-  $('bounceCount').innerText =
-    bounceCounter;
-
-  $('fpsValue').innerText =
-    displayFPS;
-
-  $('gravityValue').innerText =
-    physicsEngine.gravity.toFixed(1) +
-    'm/s²';
-
-
-  animationId3D =
-    requestAnimationFrame(
-      animate3D
-    );
-}
-
-
-// =================================
-// RESET
-// =================================
-
-function reset3DScene() {
-
-  if (!physicsEngine) {
-
-    init3DScene();
-
-    return;
-  }
-
-
-  physicsEngine.reset();
-
-
-  $('particleCount').innerText =
-    physicsEngine.particles.length;
-
-  $('bounceCount').innerText =
-    '0';
-
-
-  lastFrameTime =
-    performance.now();
-
-
-  if (!animationRunning3D) {
-
-    animationRunning3D = true;
-
-    const btn =
-      document.querySelector(
-        '#3d-visual .button-group.dual .secondary'
-      );
-
-    if (btn) {
-      btn.innerText =
-        'PAUSE';
-    }
-
-    if (!animationId3D) {
-      animate3D();
-    }
-  }
-}
-
-
-// =================================
-// PAUSE / RESUME
-// =================================
-
-function toggle3DAnimation() {
-
-  animationRunning3D =
-    !animationRunning3D;
-
-
-  const btn =
-    document.querySelector(
-      '#3d-visual .button-group.dual .secondary'
-    );
-
-
-  if (
-    animationRunning3D
-  ) {
-
-    if (btn) {
-      btn.innerText =
-        'PAUSE';
-    }
-
-    lastFrameTime =
-      performance.now();
-
-    if (!animationId3D) {
-      animate3D();
-    }
-
-  } else {
-
-    if (btn) {
-      btn.innerText =
-        'RESUME';
-    }
-
-    if (animationId3D) {
-
-      cancelAnimationFrame(
-        animationId3D
-      );
-
-      animationId3D = null;
-    }
-  }
-}
-
-
-// =================================
-// TAP / CLICK TO CREATE PARTICLES
-// =================================
-
+// Mouse / touch steering
 if (canvas3D) {
+  canvas3D.addEventListener('pointerdown', function(e) {
+    const rect = canvas3D.getBoundingClientRect();
+    const x = e.clientX - rect.left;
 
-  canvas3D.addEventListener(
-    'click',
-    function(e) {
-
-      if (!physicsEngine) {
-
-        init3DScene();
-
-        return;
-      }
-
-      const rect =
-        canvas3D.getBoundingClientRect();
-
-      const x =
-        e.clientX -
-        rect.left;
-
-      const y =
-        e.clientY -
-        rect.top;
-
-
-      for (
-        let i = 0;
-        i < 3;
-        i++
-      ) {
-
-        physicsEngine.addParticle(
-          x,
-          y,
-          (Math.random() - 0.5) * 5,
-          -Math.random() * 3
-        );
-      }
+    if (x < rect.width / 2) {
+      racingKeys.left = true;
+    } else {
+      racingKeys.right = true;
     }
-  );
+
+    racingKeys.accelerate = true;
+  });
+
+  canvas3D.addEventListener('pointerup', function() {
+    racingKeys.left = false;
+    racingKeys.right = false;
+    racingKeys.accelerate = false;
+  });
+
+  canvas3D.addEventListener('pointerleave', function() {
+    racingKeys.left = false;
+    racingKeys.right = false;
+    racingKeys.accelerate = false;
+  });
 }
 
+// Keyboard controls
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+    racingKeys.left = true;
+  }
 
-// =================================
-// RESIZE
-// =================================
+  if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+    racingKeys.right = true;
+  }
 
-window.addEventListener(
-  'resize',
-  function() {
+  if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
+    racingKeys.accelerate = true;
+  }
 
-    const screen =
-      document.getElementById(
-        '3d-visual'
-      );
+  if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+    racingKeys.brake = true;
+  }
+});
 
-    if (
-      screen &&
-      screen.classList.contains(
-        'active'
-      )
-    ) {
+window.addEventListener('keyup', function(e) {
+  if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+    racingKeys.left = false;
+  }
 
-      resize3DCanvas();
+  if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+    racingKeys.right = false;
+  }
 
-      if (physicsEngine) {
+  if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
+    racingKeys.accelerate = false;
+  }
 
-        const ctx =
-          canvas3D.getContext('2d');
+  if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+    racingKeys.brake = false;
+  }
+});
 
-        if (ctx) {
-          physicsEngine.draw(ctx);
-        }
-      }
-    }
-  },
-  { passive: true }
-);
+window.addEventListener('resize', resize3DCanvas);
 
+// ===== END CAR RACING GAME =====
 // ===== VIDEO HANDLERS =====
 document.getElementById('file').addEventListener('change', function(e) {
   const file = e.target.files[0];
