@@ -902,267 +902,970 @@ function showScreen(screenId) {
   }
 }
 
+
 // ===== 3D PHYSICS ENGINE =====
+
+let nextParticleId = 1;
+
 class Particle {
   constructor(x, y, vx, vy) {
+    this.id = nextParticleId++;
+
     this.x = x;
     this.y = y;
     this.vx = vx;
     this.vy = vy;
-    this.radius = 3 + Math.random() * 3;
-    this.mass = this.radius;
-    this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
-    this.life = 300 + Math.random() * 200;
-    this.maxLife = this.life;
-    this.lastCollisionFrame = {};
+
+    this.radius = 10 + Math.random() * 5;
+    this.color = `hsl(${Math.random() * 360}, 75%, 60%)`;
+
+    // Prevent repeated bounce counting
+    this.floorCooldown = 0;
+    this.lastCollision = {};
   }
 
-  update(gravity, canvasWidth, canvasHeight, particles, frameId) {
-    // Apply gravity
-    this.vy += gravity * 0.016;
+  update(gravity, width, height, particles, dt, frameId) {
 
-    // Update position
-    this.x += this.vx;
-    this.y += this.vy;
+    // Gravity
+    this.vy += gravity * dt;
 
-    // Damping
-    this.vx *= 0.98;
-    this.vy *= 0.98;
+    // Position
+    this.x += this.vx * dt * 60;
+    this.y += this.vy * dt * 60;
 
-    // Floor collision (ground)
-    const floorY = canvasHeight - 10;
-    if (this.y + this.radius > floorY) {
-      const key = 'floor';
-      if (this.lastCollisionFrame[key] !== frameId && Math.abs(this.vy) > 0.5) {
-        this.y = floorY - this.radius;
-        this.vy = -this.vy * 0.85;
+    // Air damping
+    this.vx *= Math.pow(0.992, dt * 60);
+    this.vy *= Math.pow(0.999, dt * 60);
+
+    // -------------------------
+    // FLOOR COLLISION
+    // -------------------------
+    const floorY = height - 28;
+
+    if (this.y + this.radius >= floorY) {
+
+      this.y = floorY - this.radius;
+
+      // Only count a real downward impact
+      if (
+        this.vy > 0.35 &&
+        this.floorCooldown <= 0
+      ) {
+        this.vy = -this.vy * 0.72;
+
         bounceCounter++;
-        this.lastCollisionFrame[key] = frameId;
-      }
-    }
 
-    // Wall collisions
-    if (this.x - this.radius < 0) {
-      const key = 'left';
-      if (this.lastCollisionFrame[key] !== frameId && Math.abs(this.vx) > 0.5) {
-        this.x = this.radius;
-        this.vx = -this.vx * 0.85;
-        bounceCounter++;
-        this.lastCollisionFrame[key] = frameId;
-      }
-    }
-    if (this.x + this.radius > canvasWidth) {
-      const key = 'right';
-      if (this.lastCollisionFrame[key] !== frameId && Math.abs(this.vx) > 0.5) {
-        this.x = canvasWidth - this.radius;
-        this.vx = -this.vx * 0.85;
-        bounceCounter++;
-        this.lastCollisionFrame[key] = frameId;
-      }
-    }
-    if (this.y - this.radius < 0) {
-      const key = 'top';
-      if (this.lastCollisionFrame[key] !== frameId && Math.abs(this.vy) > 0.5) {
-        this.y = this.radius;
-        this.vy = -this.vy * 0.85;
-        bounceCounter++;
-        this.lastCollisionFrame[key] = frameId;
-      }
-    }
-
-    // Particle-to-particle collisions
-    for (let i = 0; i < particles.length; i++) {
-      const other = particles[i];
-      if (other === this) continue;
-
-      const dx = other.x - this.x;
-      const dy = other.y - this.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const minDist = this.radius + other.radius;
-
-      if (distance < minDist && distance > 0) {
-        const colKey = other.id;
-        if (this.lastCollisionFrame[colKey] !== frameId) {
-          // Simple elastic collision response
-          const angle = Math.atan2(dy, dx);
-          const sin = Math.sin(angle);
-          const cos = Math.cos(angle);
-
-          // Rotate velocities
-          const vx1 = this.vx * cos + this.vy * sin;
-          const vy1 = this.vy * cos - this.vx * sin;
-          const vx2 = other.vx * cos + other.vy * sin;
-          const vy2 = other.vy * cos - other.vx * sin;
-
-          // Swap x velocities (elastic collision)
-          const temp = vx1;
-          this.vx = (vx2 * cos - vy1 * sin) * 0.95;
-          this.vy = (vy1 * cos + vx2 * sin) * 0.95;
-          other.vx = (temp * cos - vy2 * sin) * 0.95;
-          other.vy = (vy2 * cos + temp * sin) * 0.95;
-
-          // Separate particles
-          const overlap = minDist - distance;
-          const moveX = (overlap / 2) * cos;
-          const moveY = (overlap / 2) * sin;
-          this.x -= moveX;
-          this.y -= moveY;
-          other.x += moveX;
-          other.y += moveY;
-
-          bounceCounter++;
-          this.lastCollisionFrame[colKey] = frameId;
+        this.floorCooldown = 0.18;
+      } else {
+        // Stop tiny vibrations
+        if (Math.abs(this.vy) < 0.45) {
+          this.vy = 0;
         }
       }
     }
 
-    // Decrease life
-    this.life -= 1;
+    if (this.floorCooldown > 0) {
+      this.floorCooldown -= dt;
+    }
+
+    // -------------------------
+    // LEFT WALL
+    // -------------------------
+    if (this.x - this.radius < 5) {
+      this.x = 5 + this.radius;
+
+      if (this.vx < -0.5) {
+        this.vx = -this.vx * 0.78;
+      }
+    }
+
+    // -------------------------
+    // RIGHT WALL
+    // -------------------------
+    if (this.x + this.radius > width - 5) {
+      this.x = width - 5 - this.radius;
+
+      if (this.vx > 0.5) {
+        this.vx = -this.vx * 0.78;
+      }
+    }
+
+    // -------------------------
+    // CEILING
+    // -------------------------
+    if (this.y - this.radius < 5) {
+      this.y = 5 + this.radius;
+
+      if (this.vy < -0.5) {
+        this.vy = -this.vy * 0.78;
+      }
+    }
+
+    // -------------------------
+    // PARTICLE COLLISIONS
+    // -------------------------
+    for (const other of particles) {
+
+      if (other === this) continue;
+
+      const dx = other.x - this.x;
+      const dy = other.y - this.y;
+
+      const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+      const minDistance =
+        this.radius + other.radius;
+
+      if (
+        distance > 0 &&
+        distance < minDistance
+      ) {
+
+        const nx = dx / distance;
+        const ny = dy / distance;
+
+        // Relative velocity
+        const rvx = other.vx - this.vx;
+        const rvy = other.vy - this.vy;
+
+        const relativeVelocity =
+          rvx * nx + rvy * ny;
+
+        // Only collide when moving toward each other
+        if (relativeVelocity < 0) {
+
+          const pairKey =
+            Math.min(this.id, other.id) +
+            '-' +
+            Math.max(this.id, other.id);
+
+          if (this.lastCollision[pairKey] !== frameId) {
+
+            const impulse =
+              -relativeVelocity * 0.85;
+
+            this.vx -= impulse * nx;
+            this.vy -= impulse * ny;
+
+            other.vx += impulse * nx;
+            other.vy += impulse * ny;
+
+            // Separate overlapping particles
+            const overlap =
+              minDistance - distance;
+
+            this.x -= nx * overlap * 0.5;
+            this.y -= ny * overlap * 0.5;
+
+            other.x += nx * overlap * 0.5;
+            other.y += ny * overlap * 0.5;
+
+            this.lastCollision[pairKey] =
+              frameId;
+
+            other.lastCollision[pairKey] =
+              frameId;
+          }
+        }
+      }
+    }
+
+    // Prevent unstable speeds
+    const maxSpeed = 18;
+
+    this.vx = Math.max(
+      -maxSpeed,
+      Math.min(maxSpeed, this.vx)
+    );
+
+    this.vy = Math.max(
+      -maxSpeed,
+      Math.min(maxSpeed, this.vy)
+    );
   }
 
   draw(ctx) {
-    const alpha = Math.max(0, this.life / this.maxLife);
-    ctx.fillStyle = this.color;
-    ctx.globalAlpha = alpha;
+
+    const r = this.radius;
+
+    // Shadow
+    ctx.save();
+
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = '#000';
+
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+    ctx.ellipse(
+      this.x + 4,
+      this.y + r + 5,
+      r * 1.15,
+      r * 0.35,
+      0,
+      0,
+      Math.PI * 2
+    );
+
     ctx.fill();
-    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // 3D sphere gradient
+    const gradient =
+      ctx.createRadialGradient(
+        this.x - r * 0.35,
+        this.y - r * 0.4,
+        r * 0.08,
+        this.x,
+        this.y,
+        r
+      );
+
+    gradient.addColorStop(
+      0,
+      '#ffffff'
+    );
+
+    gradient.addColorStop(
+      0.18,
+      this.color
+    );
+
+    gradient.addColorStop(
+      0.72,
+      this.color
+    );
+
+    gradient.addColorStop(
+      1,
+      '#05070a'
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      this.x,
+      this.y,
+      r,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Highlight
+    ctx.fillStyle =
+      'rgba(255,255,255,0.65)';
+
+    ctx.beginPath();
+
+    ctx.arc(
+      this.x - r * 0.3,
+      this.y - r * 0.35,
+      r * 0.18,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
   }
 }
 
-let frameCounter = 0;
 
 class PhysicsEngine {
+
   constructor(width, height) {
+
     this.width = width;
     this.height = height;
+
     this.particles = [];
+
     this.gravity = 9.8;
+
     this.frameId = 0;
+
+    this.spawnInitialParticles();
   }
 
-  addParticle(x, y, vx = 0, vy = 0) {
-    const p = new Particle(x, y, vx, vy);
-    p.id = this.particles.length;
+  addParticle(
+    x,
+    y,
+    vx = 0,
+    vy = 0
+  ) {
+
+    const p =
+      new Particle(
+        x,
+        y,
+        vx,
+        vy
+      );
+
     this.particles.push(p);
   }
 
-  update() {
+  spawnInitialParticles() {
+
+    // Visible immediately
+    const positions = [
+      [80, 80],
+      [170, 110],
+      [270, 75],
+      [380, 130],
+      [460, 90],
+      [320, 180]
+    ];
+
+    positions.forEach(
+      ([x, y], index) => {
+
+        this.addParticle(
+          x,
+          y,
+          (Math.random() - 0.5) * 2.5,
+          index * 0.15
+        );
+      }
+    );
+  }
+
+  update(dt) {
+
     this.frameId++;
-    for (let p of this.particles) {
-      p.update(this.gravity, this.width, this.height, this.particles, this.frameId);
+
+    for (
+      const particle
+      of this.particles
+    ) {
+
+      particle.update(
+        this.gravity,
+        this.width,
+        this.height,
+        this.particles,
+        dt,
+        this.frameId
+      );
     }
-    this.particles = this.particles.filter(p => p.life > 0);
   }
 
   draw(ctx) {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, this.width, this.height);
 
-    // Draw floor
-    ctx.strokeStyle = '#2f7ff5';
-    ctx.lineWidth = 2;
+    // Background
+    const background =
+      ctx.createLinearGradient(
+        0,
+        0,
+        0,
+        this.height
+      );
+
+    background.addColorStop(
+      0,
+      '#07111c'
+    );
+
+    background.addColorStop(
+      0.55,
+      '#0c1925'
+    );
+
+    background.addColorStop(
+      1,
+      '#05080c'
+    );
+
+    ctx.fillStyle =
+      background;
+
+    ctx.fillRect(
+      0,
+      0,
+      this.width,
+      this.height
+    );
+
+
+    // -------------------------
+    // 3D FLOOR
+    // -------------------------
+
+    const horizon =
+      this.height * 0.58;
+
+    ctx.fillStyle =
+      '#111d29';
+
     ctx.beginPath();
-    ctx.moveTo(0, this.height - 10);
-    ctx.lineTo(this.width, this.height - 10);
+
+    ctx.moveTo(
+      0,
+      horizon
+    );
+
+    ctx.lineTo(
+      this.width,
+      horizon
+    );
+
+    ctx.lineTo(
+      this.width,
+      this.height
+    );
+
+    ctx.lineTo(
+      0,
+      this.height
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    // Horizon line
+    ctx.strokeStyle =
+      '#41627e';
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      0,
+      horizon
+    );
+
+    ctx.lineTo(
+      this.width,
+      horizon
+    );
+
     ctx.stroke();
 
-    for (let p of this.particles) {
-      p.draw(ctx);
+
+    // Perspective grid
+    ctx.strokeStyle =
+      'rgba(80,130,170,0.25)';
+
+    ctx.lineWidth = 1;
+
+
+    const centerX =
+      this.width / 2;
+
+
+    // Depth lines
+    for (
+      let i = -10;
+      i <= 10;
+      i++
+    ) {
+
+      const bottomX =
+        centerX +
+        i *
+        (this.width / 10);
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        centerX,
+        horizon
+      );
+
+      ctx.lineTo(
+        bottomX,
+        this.height
+      );
+
+      ctx.stroke();
     }
+
+
+    // Horizontal perspective lines
+    for (
+      let i = 1;
+      i <= 8;
+      i++
+    ) {
+
+      const t = i / 8;
+
+      const y =
+        horizon +
+        Math.pow(t, 1.8) *
+        (this.height - horizon);
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        0,
+        y
+      );
+
+      ctx.lineTo(
+        this.width,
+        y
+      );
+
+      ctx.stroke();
+    }
+
+
+    // -------------------------
+    // PARTICLES
+    // -------------------------
+
+    for (
+      const particle
+      of this.particles
+    ) {
+
+      particle.draw(ctx);
+    }
+
+
+    // Border
+    ctx.strokeStyle =
+      '#26313e';
+
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+      1,
+      1,
+      this.width - 2,
+      this.height - 2
+    );
+
+
+    // Title
+    ctx.fillStyle =
+      'rgba(255,255,255,0.7)';
+
+    ctx.font =
+      'bold 12px Arial';
+
+    ctx.fillText(
+      '3D PHYSICS LAB',
+      14,
+      22
+    );
   }
 
   reset() {
+
     this.particles = [];
-    this.frameId = 0;
+
+    bounceCounter = 0;
+
+    this.spawnInitialParticles();
   }
 }
+
+
+// =================================
+// 3D INITIALIZATION
+// =================================
+
+function resize3DCanvas() {
+
+  if (!canvas3D) return;
+
+  const rect =
+    canvas3D.getBoundingClientRect();
+
+  const width =
+    Math.max(
+      320,
+      Math.floor(rect.width)
+    );
+
+  const height =
+    Math.max(
+      300,
+      Math.floor(rect.height)
+    );
+
+  const dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+  canvas3D.width =
+    width * dpr;
+
+  canvas3D.height =
+    height * dpr;
+
+  const ctx =
+    canvas3D.getContext('2d');
+
+  if (!ctx) return;
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  if (physicsEngine) {
+
+    physicsEngine.width =
+      width;
+
+    physicsEngine.height =
+      height;
+  }
+}
+
 
 function init3DScene() {
+
   if (!canvas3D) return;
-  
-  const rect = canvas3D.getBoundingClientRect();
-  canvas3D.width = rect.width * (window.devicePixelRatio || 1);
-  canvas3D.height = rect.height * (window.devicePixelRatio || 1);
-  
-  const ctx = canvas3D.getContext('2d');
-  if (!ctx) return;
-  
-  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-  
-  physicsEngine = new PhysicsEngine(rect.width, rect.height);
-  
-  // Add initial particles
-  for (let i = 0; i < 5; i++) {
-    const x = Math.random() * rect.width;
-    const y = Math.random() * rect.height * 0.5;
-    const vx = (Math.random() - 0.5) * 4;
-    const vy = Math.random() * 2;
-    physicsEngine.addParticle(x, y, vx, vy);
+
+  const rect =
+    canvas3D.getBoundingClientRect();
+
+  if (
+    rect.width <= 0 ||
+    rect.height <= 0
+  ) {
+
+    setTimeout(
+      init3DScene,
+      150
+    );
+
+    return;
   }
-  
-  bounceCounter = 0;
-  animate3D();
-}
 
-function animate3D() {
-  if (!animationRunning3D || !physicsEngine || !canvas3D) return;
-  
-  const ctx = canvas3D.getContext('2d');
-  if (!ctx) return;
-  
-  const rect = canvas3D.getBoundingClientRect();
-  
-  physicsEngine.update();
-  physicsEngine.draw(ctx);
-  
-  $('particleCount').innerText = physicsEngine.particles.length;
-  $('bounceCount').innerText = bounceCounter;
-  
-  animationId3D = requestAnimationFrame(animate3D);
-}
 
-function reset3DScene() {
-  if (physicsEngine) {
-    physicsEngine.reset();
+  resize3DCanvas();
+
+
+  // IMPORTANT:
+  // Create engine ONLY once
+  if (!physicsEngine) {
+
+    physicsEngine =
+      new PhysicsEngine(
+        canvas3D.clientWidth,
+        canvas3D.clientHeight
+      );
+
     bounceCounter = 0;
-    $('bounceCount').innerText = '0';
-    $('particleCount').innerText = '0';
-    init3DScene();
   }
-}
 
-function toggle3DAnimation() {
-  animationRunning3D = !animationRunning3D;
-  const btn = document.querySelector('#3d-visual .button-group.dual .secondary');
-  if (btn) {
-    btn.innerText = animationRunning3D ? 'PAUSE' : 'RESUME';
-  }
-  if (animationRunning3D) {
+
+  const ctx =
+    canvas3D.getContext('2d');
+
+  if (!ctx) return;
+
+
+  // Draw immediately
+  physicsEngine.draw(ctx);
+
+
+  $('particleCount').innerText =
+    physicsEngine.particles.length;
+
+  $('bounceCount').innerText =
+    bounceCounter;
+
+  $('gravityValue').innerText =
+    physicsEngine.gravity.toFixed(1) +
+    'm/s²';
+
+
+  if (!animationId3D) {
+
+    animationRunning3D = true;
+
+    lastFrameTime =
+      performance.now();
+
     animate3D();
   }
 }
 
-// Click to add particles
-if (canvas3D) {
-  canvas3D.addEventListener('click', function(e) {
-    if (!physicsEngine) return;
-    const rect = canvas3D.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const vx = (Math.random() - 0.5) * 6;
-    const vy = (Math.random() - 0.5) * 6;
-    physicsEngine.addParticle(x, y, vx, vy);
-  });
+
+// =================================
+// ANIMATION LOOP
+// =================================
+
+function animate3D() {
+
+  if (
+    !animationRunning3D ||
+    !physicsEngine ||
+    !canvas3D
+  ) {
+
+    animationId3D = null;
+
+    return;
+  }
+
+
+  const now =
+    performance.now();
+
+  let dt =
+    (now - lastFrameTime) / 1000;
+
+  lastFrameTime = now;
+
+
+  // Protect physics from lag
+  dt =
+    Math.min(
+      Math.max(dt, 0.001),
+      0.033
+    );
+
+
+  const currentFPS =
+    Math.round(
+      1 / dt
+    );
+
+  const displayFPS =
+    Math.min(
+      60,
+      Math.max(
+        1,
+        currentFPS
+      )
+    );
+
+
+  physicsEngine.update(dt);
+
+
+  const ctx =
+    canvas3D.getContext('2d');
+
+  if (ctx) {
+
+    physicsEngine.draw(ctx);
+  }
+
+
+  $('particleCount').innerText =
+    physicsEngine.particles.length;
+
+  $('bounceCount').innerText =
+    bounceCounter;
+
+  $('fpsValue').innerText =
+    displayFPS;
+
+  $('gravityValue').innerText =
+    physicsEngine.gravity.toFixed(1) +
+    'm/s²';
+
+
+  animationId3D =
+    requestAnimationFrame(
+      animate3D
+    );
 }
 
-// Handle window resize
-window.addEventListener('resize', function() {
-  if (document.getElementById('3d-visual').classList.contains('active')) {
+
+// =================================
+// RESET
+// =================================
+
+function reset3DScene() {
+
+  if (!physicsEngine) {
+
     init3DScene();
+
+    return;
   }
-});
+
+
+  physicsEngine.reset();
+
+
+  $('particleCount').innerText =
+    physicsEngine.particles.length;
+
+  $('bounceCount').innerText =
+    '0';
+
+
+  lastFrameTime =
+    performance.now();
+
+
+  if (!animationRunning3D) {
+
+    animationRunning3D = true;
+
+    const btn =
+      document.querySelector(
+        '#3d-visual .button-group.dual .secondary'
+      );
+
+    if (btn) {
+      btn.innerText =
+        'PAUSE';
+    }
+
+    if (!animationId3D) {
+      animate3D();
+    }
+  }
+}
+
+
+// =================================
+// PAUSE / RESUME
+// =================================
+
+function toggle3DAnimation() {
+
+  animationRunning3D =
+    !animationRunning3D;
+
+
+  const btn =
+    document.querySelector(
+      '#3d-visual .button-group.dual .secondary'
+    );
+
+
+  if (
+    animationRunning3D
+  ) {
+
+    if (btn) {
+      btn.innerText =
+        'PAUSE';
+    }
+
+    lastFrameTime =
+      performance.now();
+
+    if (!animationId3D) {
+      animate3D();
+    }
+
+  } else {
+
+    if (btn) {
+      btn.innerText =
+        'RESUME';
+    }
+
+    if (animationId3D) {
+
+      cancelAnimationFrame(
+        animationId3D
+      );
+
+      animationId3D = null;
+    }
+  }
+}
+
+
+// =================================
+// TAP / CLICK TO CREATE PARTICLES
+// =================================
+
+if (canvas3D) {
+
+  canvas3D.addEventListener(
+    'click',
+    function(e) {
+
+      if (!physicsEngine) {
+
+        init3DScene();
+
+        return;
+      }
+
+      const rect =
+        canvas3D.getBoundingClientRect();
+
+      const x =
+        e.clientX -
+        rect.left;
+
+      const y =
+        e.clientY -
+        rect.top;
+
+
+      for (
+        let i = 0;
+        i < 3;
+        i++
+      ) {
+
+        physicsEngine.addParticle(
+          x,
+          y,
+          (Math.random() - 0.5) * 5,
+          -Math.random() * 3
+        );
+      }
+    }
+  );
+}
+
+
+// =================================
+// RESIZE
+// =================================
+
+window.addEventListener(
+  'resize',
+  function() {
+
+    const screen =
+      document.getElementById(
+        '3d-visual'
+      );
+
+    if (
+      screen &&
+      screen.classList.contains(
+        'active'
+      )
+    ) {
+
+      resize3DCanvas();
+
+      if (physicsEngine) {
+
+        const ctx =
+          canvas3D.getContext('2d');
+
+        if (ctx) {
+          physicsEngine.draw(ctx);
+        }
+      }
+    }
+  },
+  { passive: true }
+);
 
 // ===== VIDEO HANDLERS =====
 document.getElementById('file').addEventListener('change', function(e) {
