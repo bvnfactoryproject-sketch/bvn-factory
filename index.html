@@ -879,29 +879,32 @@ function time(t) {
 }
 
 // ===== NAVIGATION =====
-function showScreen(screenId) {
-  const screens = document.querySelectorAll('.screen');
-  screens.forEach(s => s.classList.remove('active'));
-  
-  const navButtons = document.querySelectorAll('.nav button');
-  navButtons.forEach(b => b.classList.remove('active'));
-  
-  const targetScreen = document.getElementById(screenId);
-  if (targetScreen) {
-    targetScreen.classList.add('active');
-  }
-  
-  const targetNavBtn = document.querySelector(`.nav button[data-screen="${screenId}"]`);
-  if (targetNavBtn) {
-    targetNavBtn.classList.add('active');
-  }
+// ===== NAVIGATION CLICK FIX =====
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest('.nav_button');
 
-  // Initialize 3D scene when 3D screen is opened
-  if (screenId === '3d-visual') {
-    setTimeout(() => init3DScene(), 100);
-  }
-}
+  if (!btn) return;
 
+  const screenId = btn.getAttribute('data-screen');
+
+  if (!screenId) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  showScreen(screenId);
+});
+
+// ===== INITIAL SCREEN =====
+document.addEventListener('DOMContentLoaded', function () {
+  const firstScreen =
+    document.querySelector('.screen.active') ||
+    document.querySelector('.screen');
+
+  if (firstScreen && typeof showScreen === 'function') {
+    showScreen(firstScreen.id);
+  }
+});
 
 // ===== 3D PHYSICS ENGINE =====
 // ===== 3D PHYSICS ENGINE / CAR RACING =====
