@@ -1036,22 +1036,67 @@ function resize3DCanvas() {
 }
 
 function updateRacingUI() {
-  const particle = document.getElementById('particleCount');
-  const gravity = document.querySelector(
-    '#3d-visual .stat-card:nth-child(2) .stat-value'
-  );
-  const bounce = document.getElementById('bounceCount');
+  const screen = document.getElementById('3d-visual');
 
-  if (particle) {
-    particle.innerText = racingCars.length;
-  }
+  if (!screen) return;
 
-  if (gravity) {
-    gravity.innerText = racingLap + '/' + RACING_LAPS;
-  }
+  const cards = screen.querySelectorAll('.stat-card');
 
-  if (bounce) {
-    bounce.innerText = racingOvertakes;
+  if (cards.length >= 4) {
+
+    // CARD 1 — CARS
+    const label1 = cards[0].querySelector(
+      '.stat-label, .label, div:first-child'
+    );
+
+    const value1 = cards[0].querySelector(
+      '.stat-value, .value, div:last-child'
+    );
+
+    if (label1) label1.innerText = 'CARS';
+    if (value1) value1.innerText = racingCars.length;
+
+    // CARD 2 — LAP
+    const label2 = cards[1].querySelector(
+      '.stat-label, .label, div:first-child'
+    );
+
+    const value2 = cards[1].querySelector(
+      '.stat-value, .value, div:last-child'
+    );
+
+    if (label2) label2.innerText = 'LAP';
+    if (value2) {
+      value2.innerText =
+        racingLap + '/' + RACING_LAPS;
+    }
+
+    // CARD 3 — FPS
+    const label3 = cards[2].querySelector(
+      '.stat-label, .label, div:first-child'
+    );
+
+    const value3 = cards[2].querySelector(
+      '.stat-value, .value, div:last-child'
+    );
+
+    if (label3) label3.innerText = 'FPS';
+    if (value3) value3.innerText = '60';
+
+    // CARD 4 — OVERTAKES
+    const label4 = cards[3].querySelector(
+      '.stat-label, .label, div:first-child'
+    );
+
+    const value4 = cards[3].querySelector(
+      '.stat-value, .value, div:last-child'
+    );
+
+    if (label4) label4.innerText = 'OVERTAKES';
+
+    if (value4) {
+      value4.innerText = racingOvertakes;
+    }
   }
 }
 
