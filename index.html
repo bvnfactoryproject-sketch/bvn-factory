@@ -973,29 +973,69 @@ function createRacingCars() {
 }
 
 function init3DScene() {
+function init3DScene() {
   if (!canvas3D) return;
 
-  cancelAnimationFrame(racingAnimationId);
+  // Stop any previous racing animation loop
+  if (racingAnimationId) {
+    cancelAnimationFrame(racingAnimationId);
+    racingAnimationId = null;
+  }
 
   const rect = canvas3D.getBoundingClientRect();
-  const width = Math.max(1, rect.width);
-  const height = Math.max(1, rect.height);
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  canvas3D.width = Math.floor(width * dpr);
-  canvas3D.height = Math.floor(height * dpr);
+  const width = Math.max(1, Math.floor(rect.width));
+  const height = Math.max(1, Math.floor(rect.height));
 
+  const dpr = Math.min(
+    window.devicePixelRatio || 1,
+    2
+  );
+
+  // Keep the canvas strictly inside its container
   canvas3D.style.display = 'block';
   canvas3D.style.width = '100%';
   canvas3D.style.height = '100%';
   canvas3D.style.maxWidth = '100%';
   canvas3D.style.maxHeight = '100%';
   canvas3D.style.boxSizing = 'border-box';
+  canvas3D.style.margin = '0';
+  canvas3D.style.padding = '0';
+
+  // Prevent accidental overflow from the canvas wrapper
+  if (canvas3D.parentElement) {
+    canvas3D.parentElement.style.overflow = 'hidden';
+  }
+
+  // High-resolution backing canvas
+  canvas3D.width = Math.max(
+    1,
+    Math.floor(width * dpr)
+  );
+
+  canvas3D.height = Math.max(
+    1,
+    Math.floor(height * dpr)
+  );
 
   const ctx = canvas3D.getContext('2d');
+
   if (!ctx) return;
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Always reset transform before applying DPR.
+  // This prevents transform multiplication after resize.
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  // Store logical drawing size for the racing renderer
+  canvas3D.dataset.logicalWidth = String(width);
+  canvas3D.dataset.logicalHeight = String(height);
 
   createRacingCars();
 
@@ -1012,27 +1052,88 @@ function init3DScene() {
 
   updateRacingUI();
 
+  // Start exactly one animation loop
   animate3D();
 }
+
 
 function resize3DCanvas() {
   if (!canvas3D) return;
 
-  const screen = document.getElementById('3d-visual');
+  const screen =
+    document.getElementById('3d-visual');
 
-  if (!screen || !screen.classList.contains('active')) return;
-
-  const rect = canvas3D.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-  canvas3D.width = Math.max(1, Math.floor(rect.width * dpr));
-  canvas3D.height = Math.max(1, Math.floor(rect.height * dpr));
-
-  const ctx = canvas3D.getContext('2d');
-
-  if (ctx) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (
+    !screen ||
+    !screen.classList.contains('active')
+  ) {
+    return;
   }
+
+  const rect =
+    canvas3D.getBoundingClientRect();
+
+  const width =
+    Math.max(1, Math.floor(rect.width));
+
+  const height =
+    Math.max(1, Math.floor(rect.height));
+
+  const dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+  // CSS size must remain inside the visible container
+  canvas3D.style.display = 'block';
+  canvas3D.style.width = '100%';
+  canvas3D.style.height = '100%';
+  canvas3D.style.maxWidth = '100%';
+  canvas3D.style.maxHeight = '100%';
+  canvas3D.style.boxSizing = 'border-box';
+  canvas3D.style.margin = '0';
+  canvas3D.style.padding = '0';
+
+  if (canvas3D.parentElement) {
+    canvas3D.parentElement.style.overflow =
+      'hidden';
+  }
+
+  // Do NOT recreate the racing game on resize.
+  // Only resize the drawing surface.
+  canvas3D.width =
+    Math.max(
+      1,
+      Math.floor(width * dpr)
+    );
+
+  canvas3D.height =
+    Math.max(
+      1,
+      Math.floor(height * dpr)
+    );
+
+  const ctx =
+    canvas3D.getContext('2d');
+
+  if (!ctx) return;
+
+  // Reset transform so DPR is applied only once.
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  canvas3D.dataset.logicalWidth =
+    String(width);
+
+  canvas3D.dataset.logicalHeight =
+    String(height);
 }
 
 function updateRacingUI() {
